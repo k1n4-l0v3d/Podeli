@@ -1,0 +1,1151 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Подели!</title>
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --glass:rgba(255,255,255,.06);--glass-hover:rgba(255,255,255,.1);
+    --glass-border:rgba(255,255,255,.1);--glass-border-strong:rgba(255,255,255,.18);
+    --text:#f0f0f8;--muted:rgba(255,255,255,.45);
+    --accent:#7c6fff;--accent2:#a78bfa;
+    --danger:#ff6b6b;--danger-bg:rgba(255,107,107,.12);--danger-border:rgba(255,107,107,.3);
+    --success:#4ade80;--success-bg:rgba(74,222,128,.1);--success-border:rgba(74,222,128,.3);
+    --warning:#fbbf24;--warning-bg:rgba(251,191,36,.1);--warning-border:rgba(251,191,36,.3);
+    --radius:16px;--radius-sm:10px;--radius-xs:7px;
+  }
+  @keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+  @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(124,111,255,.4)}50%{box-shadow:0 0 0 8px rgba(124,111,255,0)}}
+  @keyframes cardIn{from{opacity:0;transform:translateY(12px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
+  @keyframes checkPop{0%{transform:scale(0) rotate(-20deg)}60%{transform:scale(1.2) rotate(5deg)}100%{transform:scale(1) rotate(0)}}
+  @keyframes orb1{0%,100%{transform:translate(0,0)}50%{transform:translate(30px,-20px)}}
+  @keyframes orb2{0%,100%{transform:translate(0,0)}50%{transform:translate(-20px,30px)}}
+  @keyframes imgReveal{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:scale(1)}}
+  @keyframes tipIn{from{opacity:0;transform:translateY(12px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}
+  @keyframes tipOut{from{opacity:1;transform:translateY(0) scale(1)}to{opacity:0;transform:translateY(12px) scale(.97)}}
+  @keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-6px)}40%,80%{transform:translateX(6px)}}
+
+  html,body{min-height:100%}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0d0f1a;color:var(--text);font-size:22px;line-height:1.5;position:relative;overflow-x:hidden}
+  body::before,body::after{content:'';position:fixed;border-radius:50%;filter:blur(80px);opacity:.25;pointer-events:none;z-index:0}
+  body::before{width:400px;height:400px;background:#6c47ff;top:-100px;left:-100px;animation:orb1 12s ease-in-out infinite}
+  body::after{width:350px;height:350px;background:#ff47a0;bottom:-80px;right:-80px;animation:orb2 15s ease-in-out infinite}
+
+  .container{max-width:900px;margin:0 auto;padding:28px 16px 100px;position:relative;z-index:1}
+  .page{display:none}.page.active{display:block;animation:fadeIn .3s ease}
+  .card{background:var(--glass);border:1px solid var(--glass-border);border-radius:var(--radius);padding:18px 20px;margin-bottom:12px;backdrop-filter:blur(12px)}
+  .header{margin-bottom:32px;animation:fadeUp .5s ease both}
+  .header h1{font-size:32px;font-weight:800;letter-spacing:-1px}
+  .header p{color:var(--muted);font-size:14px;margin-top:6px}
+  .btn{display:inline-flex;align-items:center;gap:7px;height:40px;padding:0 18px;font-size:14px;font-weight:600;border:1px solid var(--glass-border);border-radius:var(--radius-sm);background:var(--glass);color:var(--text);cursor:pointer;transition:background .2s,border-color .2s,transform .15s;font-family:inherit;white-space:nowrap;backdrop-filter:blur(8px)}
+  .btn:hover{background:var(--glass-hover);border-color:var(--glass-border-strong)}
+  .btn:active{transform:scale(.97)}
+  .btn-primary{background:linear-gradient(135deg,#7c6fff,#a855f7);border-color:transparent;color:#fff;box-shadow:0 4px 20px rgba(124,111,255,.35)}
+  .btn-primary:hover{opacity:.9}
+  .btn-sm{height:32px;padding:0 12px;font-size:12px}
+  .btn-xs{height:26px;padding:0 10px;font-size:11px;font-weight:700}
+  .btn-danger{color:var(--danger);border-color:var(--danger-border);background:var(--danger-bg)}
+  .btn-danger:hover{background:rgba(255,107,107,.22)}
+  .btn-warning{color:var(--warning);border-color:var(--warning-border);background:var(--warning-bg)}
+  .btn-success{color:var(--success);border-color:var(--success-border);background:var(--success-bg)}
+  .btn-icon{width:34px;height:34px;padding:0;justify-content:center;font-size:18px;color:var(--muted);border-color:transparent;background:transparent}
+  .btn-icon:hover{color:var(--danger);background:var(--danger-bg);border-color:var(--danger-border)}
+  .btn-full{width:100%;justify-content:center}
+  input[type=text],input[type=number],input[type=password],input[type=tel]{width:100%;height:42px;padding:0 14px;font-size:14px;font-family:inherit;background:rgba(255,255,255,.05);border:1px solid var(--glass-border);border-radius:var(--radius-sm);color:var(--text);transition:border-color .2s,background .2s;outline:none}
+  input:focus{border-color:var(--accent2);background:rgba(124,111,255,.08);box-shadow:0 0 0 3px rgba(124,111,255,.15)}
+  input::placeholder{color:var(--muted)}
+  input[readonly]{opacity:.6;cursor:not-allowed}
+  select{width:100%;height:42px;padding:0 14px;font-size:14px;font-family:inherit;background:rgba(255,255,255,.05);border:1px solid var(--glass-border);border-radius:var(--radius-sm);color:var(--text);outline:none;cursor:pointer;appearance:none;-webkit-appearance:none}
+  select:focus{border-color:var(--accent2);background:rgba(124,111,255,.08);box-shadow:0 0 0 3px rgba(124,111,255,.15)}
+  select option{background:#1a1f38;color:var(--text)}
+  .form-row{display:flex;gap:8px;align-items:center;margin-bottom:10px}
+  .lbl{font-size:13px;color:var(--muted);white-space:nowrap}
+  .input-label{font-size:12px;font-weight:600;color:var(--muted);margin-bottom:6px;letter-spacing:.03em}
+  .sec{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--accent2);margin-bottom:10px;margin-top:22px}
+  .sec:first-child{margin-top:0}
+  .participant-block{border-bottom:1px solid var(--glass-border);padding-bottom:14px;margin-bottom:14px}
+  .participant-block:last-child{border-bottom:none;padding-bottom:0;margin-bottom:0}
+  .payer-extra{background:rgba(124,111,255,.1);border:1px solid rgba(124,111,255,.2);border-radius:var(--radius-sm);padding:12px 14px;margin-top:10px}
+  .payer-extra-label{font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--accent2);margin-bottom:10px}
+  .item-row{display:flex;gap:8px;align-items:center;margin-bottom:8px;animation:fadeUp .3s ease both}
+  .total-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(124,111,255,.12);border:1px solid rgba(124,111,255,.25);border-radius:var(--radius-xs);padding:4px 12px;font-size:13px;font-weight:700;color:var(--accent2);margin-top:8px}
+
+  /* Auth */
+  .auth-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;position:relative;z-index:1}
+  .auth-card{width:100%;max-width:400px;background:rgba(20,18,40,.95);border:1px solid var(--glass-border);border-radius:24px;padding:36px 32px;backdrop-filter:blur(20px);animation:cardIn .4s ease both;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+  .auth-logo{font-size:36px;font-weight:800;letter-spacing:-1px;background:linear-gradient(135deg,#fff 30%,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;text-align:center;margin-bottom:6px}
+  .auth-sub{text-align:center;color:var(--muted);font-size:14px;margin-bottom:28px}
+  .auth-tabs{display:flex;background:rgba(255,255,255,.05);border-radius:var(--radius-sm);padding:3px;margin-bottom:24px;gap:3px}
+  .auth-tab{flex:1;height:34px;border:none;border-radius:var(--radius-xs);background:transparent;color:var(--muted);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s}
+  .auth-tab.active{background:linear-gradient(135deg,#7c6fff,#a855f7);color:#fff;box-shadow:0 2px 12px rgba(124,111,255,.4)}
+  .auth-field{margin-bottom:14px}
+  .auth-err{font-size:13px;color:var(--danger);text-align:center;margin-bottom:12px}
+  .profile-box{background:rgba(124,111,255,.08);border:1px solid rgba(124,111,255,.2);border-radius:var(--radius-sm);padding:14px 16px;margin-bottom:20px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .profile-edit-btn{height:30px;padding:0 12px;font-size:12px;font-weight:600;border:1px solid rgba(124,111,255,.3);border-radius:var(--radius-xs);background:transparent;color:var(--accent2);cursor:pointer;font-family:inherit;transition:background .15s;white-space:nowrap}
+  .profile-edit-btn:hover{background:rgba(124,111,255,.15)}
+  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(8px);z-index:500;display:flex;align-items:center;justify-content:center;padding:20px;animation:fadeIn .2s ease}
+  .modal-card{width:100%;max-width:420px;background:rgba(20,18,40,.98);border:1px solid var(--glass-border);border-radius:20px;padding:28px 24px;backdrop-filter:blur(20px);box-shadow:0 20px 60px rgba(0,0,0,.6);animation:cardIn .3s ease both}
+  .modal-title{font-size:18px;font-weight:700;margin-bottom:6px}
+  .modal-sub{font-size:13px;color:var(--muted);margin-bottom:20px;line-height:1.5}
+  .history-item{background:var(--glass);border:1px solid var(--glass-border);border-radius:var(--radius);padding:16px 18px;margin-bottom:10px;backdrop-filter:blur(12px);animation:cardIn .35s ease both;cursor:pointer;transition:background .2s,border-color .2s,transform .15s;display:flex;align-items:center;gap:14px}
+  .history-item:hover{background:var(--glass-hover);border-color:var(--glass-border-strong);transform:translateY(-1px)}
+  .history-icon{width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,rgba(124,111,255,.3),rgba(168,85,247,.3));border:1px solid rgba(124,111,255,.3);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+  .history-icon.shared{background:linear-gradient(135deg,rgba(74,222,128,.2),rgba(16,185,129,.2));border-color:rgba(74,222,128,.3)}
+  .history-info{flex:1;min-width:0}
+  .history-name{font-weight:700;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .history-meta{font-size:12px;color:var(--muted);margin-top:2px}
+  .history-total{font-weight:800;font-size:15px;background:linear-gradient(135deg,#fff,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;flex-shrink:0}
+  .history-del{width:32px;height:32px;border-radius:8px;background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;transition:color .15s,background .15s;flex-shrink:0}
+  .history-del:hover{color:var(--danger);background:var(--danger-bg)}
+  .admin-user-card{background:var(--glass);border:1px solid var(--glass-border);border-radius:var(--radius-sm);padding:14px 16px;margin-bottom:10px;animation:cardIn .3s ease both;transition:background .2s}
+  .admin-user-card:hover{background:var(--glass-hover)}
+  .admin-user-card.banned{border-color:var(--danger-border);background:var(--danger-bg)}
+  .admin-user-name{font-weight:700;font-size:15px;flex:1}
+  .admin-user-meta{font-size:12px;color:var(--muted);margin-top:4px}
+  .admin-user-actions{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+  .badge{display:inline-block;font-size:10px;font-weight:700;padding:3px 8px;border-radius:100px;letter-spacing:.03em}
+  .badge-admin{background:rgba(124,111,255,.2);color:var(--accent2)}
+  .badge-banned{background:var(--danger-bg);color:var(--danger)}
+  .badge-muted{background:rgba(255,255,255,.08);color:var(--muted)}
+  .img-upload-zone{border:2px dashed var(--glass-border);border-radius:var(--radius-sm);padding:20px;text-align:center;cursor:pointer;transition:border-color .2s,background .2s;margin-bottom:10px;position:relative}
+  .img-upload-zone:hover{border-color:var(--accent2);background:rgba(124,111,255,.06)}
+  .img-upload-zone input[type=file]{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer}
+  .img-upload-icon{font-size:28px;margin-bottom:6px;opacity:.6}
+  .img-upload-text{font-size:13px;color:var(--muted)}
+  .img-upload-text strong{color:var(--accent2)}
+  .img-preview-wrap{position:relative;margin-bottom:10px;border-radius:var(--radius-sm);overflow:hidden}
+  .img-preview{width:100%;max-height:200px;object-fit:cover;border-radius:var(--radius-sm);display:block;animation:imgReveal .3s ease both}
+  .img-remove-btn{position:absolute;top:8px;right:8px;width:30px;height:30px;border-radius:50%;background:rgba(0,0,0,.6);border:none;color:#fff;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s}
+  .img-remove-btn:hover{background:rgba(255,107,107,.8)}
+  .img-uploading{font-size:13px;color:var(--accent2);text-align:center;padding:12px}
+  .order-item{background:var(--glass);border:1px solid var(--glass-border);border-radius:var(--radius);overflow:hidden;margin-bottom:10px;backdrop-filter:blur(12px);animation:cardIn .35s ease both;transition:border-color .2s,background .2s;cursor:pointer}
+  .order-item:hover{background:var(--glass-hover);border-color:var(--glass-border-strong)}
+  .order-item-img{width:100%;height:140px;object-fit:cover;display:block}
+  .order-item-body{padding:16px 18px}
+  .order-item-header{display:flex;justify-content:space-between;align-items:flex-start}
+  .order-item-title{font-weight:700;font-size:15px}
+  .order-item-total{font-weight:800;font-size:16px;background:linear-gradient(135deg,#fff,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+  .order-item-meta{font-size:13px;color:var(--muted);margin-top:3px}
+  .order-item-actions{display:flex;gap:6px;margin-top:12px}
+  .tabs{display:flex;gap:4px;background:rgba(255,255,255,.05);border:1px solid var(--glass-border);border-radius:var(--radius-sm);padding:4px;margin-bottom:18px}
+  .tab{flex:1;height:34px;font-size:13px;font-weight:600;border:none;border-radius:var(--radius-xs);background:transparent;color:var(--muted);cursor:pointer;font-family:inherit;transition:background .2s,color .2s}
+  .tab.active{background:linear-gradient(135deg,#7c6fff,#a855f7);color:#fff;box-shadow:0 2px 12px rgba(124,111,255,.4)}
+  .metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:18px}
+  .metric{background:var(--glass);border:1px solid var(--glass-border);border-radius:var(--radius-sm);padding:14px;backdrop-filter:blur(8px);animation:fadeUp .4s ease both}
+  .metric:nth-child(2){animation-delay:.05s}.metric:nth-child(3){animation-delay:.1s}
+  .metric-label{font-size:11px;color:var(--muted);margin-bottom:6px;font-weight:500;text-transform:uppercase;letter-spacing:.05em}
+  .metric-val{font-size:22px;font-weight:800;letter-spacing:-.5px}
+  .tx-card{border-radius:var(--radius);padding:16px 18px;margin-bottom:10px;backdrop-filter:blur(12px);animation:cardIn .35s ease both;transition:transform .15s}
+  .tx-card:hover{transform:translateY(-1px)}
+  .tx-card.owed{background:rgba(255,107,107,.08);border:1px solid var(--danger-border)}
+  .tx-card.settled{background:rgba(74,222,128,.08);border:1px solid var(--success-border)}
+  .tx-header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+  .tx-names{flex:1;min-width:0}
+  .tx-names .names-line{font-size:15px;font-weight:600}
+  .tx-names .contact-line{font-size:12px;color:var(--muted);margin-top:3px}
+  .tx-right{text-align:right;flex-shrink:0}
+  .tx-amount{font-size:18px;font-weight:800;letter-spacing:-.5px}
+  .tx-amount.red{color:var(--danger)}.tx-amount.green{color:var(--success)}
+  .tx-paid-note{font-size:12px;margin-top:2px;color:var(--success)}
+  .tx-footer{margin-top:14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .btn-repay{height:34px;padding:0 16px;font-size:13px;font-weight:600;border-radius:var(--radius-xs);cursor:pointer;font-family:inherit;transition:all .2s;display:inline-flex;align-items:center;gap:6px}
+  .btn-repay.owed{background:var(--danger-bg);color:var(--danger);border:1px solid var(--danger-border)}
+  .btn-repay.owed:hover{background:rgba(255,107,107,.22);transform:scale(1.02)}
+  .btn-repay.settled{background:var(--success-bg);color:var(--success);border:1px solid var(--success-border);animation:pulse 2s ease infinite}
+  .check-icon{display:inline-block;animation:checkPop .4s ease both}
+  .person-row{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--glass-border);font-size:14px;animation:fadeUp .3s ease both}
+  .person-row:last-child{border-bottom:none}
+  .amt-payer{font-weight:700;color:var(--text)}.amt-debtor{font-weight:700;color:var(--danger)}.amt-settled{font-weight:700;color:var(--success)}
+  .nav{display:flex;align-items:center;gap:12px;margin-bottom:24px;animation:fadeUp .3s ease both}
+  .nav h2{font-size:22px;font-weight:800;letter-spacing:-.5px}
+  .actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+  .empty{text-align:center;padding:48px 20px;color:var(--muted);font-size:14px;border:1px dashed var(--glass-border);border-radius:var(--radius);margin-bottom:12px;animation:fadeIn .4s ease both}
+  .empty-icon{font-size:36px;margin-bottom:12px;opacity:.6}
+  .err{font-size:13px;color:var(--danger);margin-top:8px;animation:fadeIn .2s ease both}
+  .link-box{background:rgba(124,111,255,.1);border:1px solid rgba(124,111,255,.25);border-radius:var(--radius-sm);padding:12px 16px;font-size:13px;color:var(--accent2);word-break:break-all;margin-bottom:14px;cursor:pointer;transition:background .2s;display:flex;align-items:center;gap:8px}
+  .link-box:hover{background:rgba(124,111,255,.18)}
+  .owe-row{display:flex;justify-content:space-between;align-items:flex-start;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.06);font-size:13px}
+  .owe-row:last-child{border-bottom:none}
+  .owe-left{flex:1;min-width:0}
+  .owe-creditor{font-weight:700;font-size:14px}
+  .owe-session{font-size:11px;color:var(--muted);margin-top:2px}
+  .owe-contact{font-size:11px;color:var(--accent2);margin-top:2px}
+  .owe-amt{font-weight:800;font-size:15px;color:var(--danger);flex-shrink:0;margin-left:12px}
+  .toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(10px);background:rgba(30,30,50,.95);border:1px solid var(--glass-border-strong);backdrop-filter:blur(20px);color:#fff;padding:12px 22px;border-radius:100px;font-size:14px;font-weight:600;opacity:0;transition:opacity .25s,transform .25s;pointer-events:none;z-index:999;white-space:nowrap}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  .anim-1{animation-delay:.05s}.anim-2{animation-delay:.1s}.anim-3{animation-delay:.15s}.anim-4{animation-delay:.2s}
+  @media(max-width:600px){.metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.metric-val{font-size:18px}.header h1{font-size:26px}.auth-card{padding:28px 20px}}
+
+  /* ── Theme transition ── */
+  body{transition:background .5s ease}
+  .card,.history-item,.order-item,.admin-user-card,.metric,.tx-card,
+  .profile-box,.payer-extra,.auth-card,.modal-card,.link-box,.tabs,
+  .btn,.profile-edit-btn,#theme-btn,#stats-toggle-btn,
+  input[type=text],input[type=number],input[type=password],input[type=tel],select{
+    transition:background-color .4s ease,border-color .4s ease,color .3s ease,box-shadow .4s ease !important}
+  .sec,.history-name,.admin-user-name,.history-meta,.admin-user-meta,.metric-label,
+  .owe-creditor,.owe-session,.modal-title,.modal-sub,.input-label,.lbl,
+  .auth-sub,.auth-err,.err,.empty{transition:color .3s ease !important}
+
+  /* ── Neon blue theme ── */
+  [data-theme="light"]{
+    --glass:rgba(0,20,60,.45);--glass-hover:rgba(0,30,80,.6);
+    --glass-border:rgba(0,200,255,.15);--glass-border-strong:rgba(0,200,255,.3);
+    --text:#e0f4ff;--muted:rgba(180,230,255,.5);
+    --accent:#00c8ff;--accent2:#00e5ff;
+    --danger:#ff4d7d;--danger-bg:rgba(255,77,125,.12);--danger-border:rgba(255,77,125,.3);
+    --success:#00ffb3;--success-bg:rgba(0,255,179,.1);--success-border:rgba(0,255,179,.25);
+    --warning:#ffcc00;--warning-bg:rgba(255,204,0,.1);--warning-border:rgba(255,204,0,.25);
+    --radius:16px;--radius-sm:10px;--radius-xs:7px;
+  }
+  [data-theme="light"] body{background:linear-gradient(135deg,#000d1a 0%,#001428 50%,#000d20 100%) !important;background-attachment:fixed}
+  [data-theme="light"] body::before{background:#0066ff;opacity:.3;width:500px;height:500px}
+  [data-theme="light"] body::after{background:#00ccff;opacity:.2;width:400px;height:400px}
+  [data-theme="light"] .card,[data-theme="light"] .history-item,[data-theme="light"] .order-item,
+  [data-theme="light"] .admin-user-card,[data-theme="light"] .metric,[data-theme="light"] .tx-card,
+  [data-theme="light"] .profile-box,[data-theme="light"] .payer-extra{
+    background:rgba(0,30,70,.5) !important;border-color:rgba(0,200,255,.15) !important;backdrop-filter:blur(16px)}
+  [data-theme="light"] .history-item:hover,[data-theme="light"] .order-item:hover{
+    background:rgba(0,40,90,.7) !important;border-color:rgba(0,220,255,.3) !important;box-shadow:0 0 20px rgba(0,200,255,.1)}
+  [data-theme="light"] .auth-card,[data-theme="light"] .modal-card{
+    background:rgba(0,20,55,.92) !important;border-color:rgba(0,200,255,.2) !important;box-shadow:0 20px 60px rgba(0,150,255,.2)}
+  [data-theme="light"] input[type=text],[data-theme="light"] input[type=number],
+  [data-theme="light"] input[type=password],[data-theme="light"] input[type=tel],
+  [data-theme="light"] select{background:rgba(0,25,60,.6) !important;color:#e0f4ff !important;border-color:rgba(0,200,255,.2) !important}
+  [data-theme="light"] input:focus,[data-theme="light"] select:focus{
+    background:rgba(0,35,80,.7) !important;border-color:#00c8ff !important;box-shadow:0 0 0 3px rgba(0,200,255,.15) !important}
+  [data-theme="light"] select option{background:#001428;color:#e0f4ff}
+  [data-theme="light"] .btn{background:rgba(0,30,70,.5) !important;border-color:rgba(0,200,255,.2) !important;color:#e0f4ff !important}
+  [data-theme="light"] .btn:hover{background:rgba(0,50,100,.7) !important;border-color:rgba(0,220,255,.35) !important}
+  [data-theme="light"] .btn-primary{background:linear-gradient(135deg,#0066ff,#00c8ff) !important;border-color:transparent !important;box-shadow:0 4px 20px rgba(0,200,255,.35) !important}
+  [data-theme="light"] .link-box{background:rgba(0,200,255,.08) !important;border-color:rgba(0,200,255,.2) !important;color:#00e5ff}
+  [data-theme="light"] .tabs{background:rgba(0,25,60,.5) !important;border-color:rgba(0,200,255,.15) !important}
+  [data-theme="light"] .tab.active{background:linear-gradient(135deg,#0066ff,#00c8ff) !important;box-shadow:0 2px 12px rgba(0,200,255,.4) !important}
+  [data-theme="light"] .sec{color:#00e5ff !important}
+  [data-theme="light"] .auth-logo{background:linear-gradient(135deg,#00c8ff,#0066ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+  [data-theme="light"] .history-total,[data-theme="light"] .order-item-total{
+    background:linear-gradient(135deg,#e0f4ff,#00c8ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+  [data-theme="light"] #clock-time{background:linear-gradient(135deg,#00e5ff,#0066ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+  [data-theme="light"] #clock div:last-child{color:rgba(0,200,255,.5)}
+  [data-theme="light"] #tip{background:linear-gradient(135deg,rgba(0,20,55,.97),rgba(0,30,70,.97));border-color:rgba(0,200,255,.2)}
+  [data-theme="light"] #tip-text{color:#e0f4ff}
+  [data-theme="light"] .toast{background:rgba(0,20,55,.97) !important;color:#e0f4ff;box-shadow:0 8px 32px rgba(0,200,255,.2)}
+  [data-theme="light"] .badge-admin{background:rgba(0,200,255,.15);color:#00e5ff}
+  [data-theme="light"] .tx-card.owed{background:rgba(255,77,125,.08) !important;border-color:rgba(255,77,125,.25) !important}
+  [data-theme="light"] .tx-card.settled{background:rgba(0,255,179,.07) !important;border-color:rgba(0,255,179,.2) !important}
+  [data-theme="light"] .admin-user-card.banned{background:rgba(255,77,125,.08) !important;border-color:rgba(255,77,125,.25) !important}
+  [data-theme="light"] .total-badge{background:rgba(0,200,255,.1);border-color:rgba(0,200,255,.2);color:#00e5ff}
+  [data-theme="light"] .profile-edit-btn{border-color:rgba(0,200,255,.3);color:#00e5ff}
+  [data-theme="light"] .profile-edit-btn:hover{background:rgba(0,200,255,.12) !important}
+  [data-theme="light"] #stats-toggle-btn{background:rgba(0,200,255,.1) !important;border-color:rgba(0,200,255,.25) !important;color:#00e5ff !important}
+  [data-theme="light"] #theme-btn{border-color:rgba(0,200,255,.2) !important;background:rgba(0,30,70,.5) !important}
+  [data-theme="light"] .auth-tab.active{background:linear-gradient(135deg,#0066ff,#00c8ff) !important}
+</style>
+</head>
+<body>
+
+<!-- AUTH -->
+<div id="p-auth" class="page active">
+  <div class="auth-wrap">
+    <div class="auth-card">
+      <div class="auth-logo">Подели!</div>
+      <div class="auth-sub">Войди чтобы продолжить</div>
+      <div class="auth-tabs">
+        <button class="auth-tab active" id="tab-login" onclick="switchAuthTab('login')">Войти</button>
+        <button class="auth-tab" id="tab-register" onclick="switchAuthTab('register')">Регистрация</button>
+      </div>
+      <div id="auth-err" class="auth-err" style="display:none"></div>
+      <div class="auth-field"><div class="input-label">Имя пользователя</div>
+        <input type="text" id="auth-username" placeholder="Введи имя" autocomplete="username"/></div>
+      <div class="auth-field"><div class="input-label">Пароль</div>
+        <input type="password" id="auth-password" placeholder="Введи пароль" autocomplete="current-password" onkeydown="if(event.key==='Enter')submitAuth()"/></div>
+      <button class="btn btn-primary btn-full" onclick="submitAuth()" style="margin-top:8px"><span id="auth-btn-text">Войти</span></button>
+    </div>
+  </div>
+</div>
+
+<!-- Profile modal -->
+<div id="modal-profile" style="display:none">
+  <div class="modal-overlay" onclick="if(event.target===this)closeProfileModal()">
+    <div class="modal-card">
+      <div class="modal-title">Мой профиль</div>
+      <div class="modal-sub">Эти данные используются для отслеживания долгов и реквизитов</div>
+      <div class="input-label">Имя в заказах</div>
+      <input type="text" id="profile-display-name" placeholder="Например: Илья" style="margin-bottom:14px"/>
+      <div class="input-label">Номер телефона</div>
+      <input type="tel" id="profile-phone" placeholder="+7 (900) 000-00-00" style="margin-bottom:14px" oninput="formatPhone(this)"/>
+      <div class="input-label">Банк</div>
+      <select id="profile-bank" style="margin-bottom:20px">
+        <option value="">— не указан —</option>
+        <option value="Сбер">Сбер</option>
+        <option value="Т-Банк">Т-Банк</option>
+        <option value="УБРИР">УБРИР</option>
+        <option value="Альфа">Альфа</option>
+        <option value="Райффайзен">Райффайзен</option>
+      </select>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-primary" onclick="saveProfile()" style="flex:1;justify-content:center">Сохранить</button>
+        <button class="btn" onclick="closeProfileModal()" style="flex:1;justify-content:center">Отмена</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Reset password modal -->
+<div id="modal-reset-pw" style="display:none">
+  <div class="modal-overlay" onclick="if(event.target===this)$('modal-reset-pw').style.display='none'">
+    <div class="modal-card">
+      <div class="modal-title">Сброс пароля</div>
+      <div class="modal-sub" id="reset-pw-sub">Новый пароль для пользователя</div>
+      <div class="input-label">Новый пароль</div>
+      <input type="text" id="reset-pw-input" placeholder="Минимум 4 символа" style="margin-bottom:16px"/>
+      <div id="reset-pw-err" class="err" style="display:none"></div>
+      <div style="display:flex;gap:8px;margin-top:12px">
+        <button class="btn btn-primary" onclick="confirmResetPassword()" style="flex:1;justify-content:center">Сохранить</button>
+        <button class="btn" onclick="$('modal-reset-pw').style.display='none'" style="flex:1;justify-content:center">Отмена</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- START -->
+  <div class="page" id="p-start">
+    <div class="header">
+      <h1><a href="/" onclick="goStart();return false;" style="text-decoration:none;background:linear-gradient(135deg,#fff 30%,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">Подели!</a></h1>
+      <p>Несколько заказов — один прозрачный итог</p>
+    </div>
+    <div id="profile-box-wrap"></div>
+    <div class="actions" style="margin-bottom:28px">
+      <button class="btn btn-primary" onclick="createSession()">+ Новая сессия</button>
+      <button class="btn" onclick="openSessionPrompt()">Открыть по ссылке</button>
+      <button class="btn btn-warning" id="btn-admin" onclick="goAdmin()" style="display:none">⚙ Админ</button>
+    </div>
+    <div class="sec">История сессий</div>
+    <div id="history-empty" class="empty" style="display:none"><div class="empty-icon">🕓</div>Пока нет сессий</div>
+    <div id="history-list"></div>
+    <div style="margin-top:28px;display:flex;align-items:center;justify-content:space-between">
+      <div class="sec" style="margin-top:0;margin-bottom:0">Статистика</div>
+      <button id="stats-toggle-btn" onclick="toggleStats()" style="display:inline-flex;align-items:center;gap:7px;height:32px;padding:0 14px;font-size:12px;font-weight:700;border-radius:100px;cursor:pointer;font-family:inherit;transition:all .25s ease;background:rgba(124,111,255,.12);border:1px solid rgba(124,111,255,.25);color:var(--accent2);letter-spacing:.03em">
+        <span id="stats-toggle-arrow" style="display:inline-block;transition:transform .3s ease;font-size:10px">▼</span>
+        <span id="stats-toggle-label">Скрыть</span>
+      </button>
+    </div>
+    <div id="stats-wrap" style="overflow:hidden;transition:max-height .45s cubic-bezier(.4,0,.2,1),opacity .35s ease;max-height:2000px;opacity:1">
+      <div id="stats-block"></div>
+    </div>
+  </div>
+
+  <!-- ADMIN -->
+  <div class="page" id="p-admin">
+    <div class="nav"><button class="btn btn-sm" onclick="goStart()">← Назад</button><h2>⚙ Админ-панель</h2></div>
+    <div class="metrics">
+      <div class="metric"><div class="metric-label">Пользователей</div><div class="metric-val" id="a-users">—</div></div>
+      <div class="metric"><div class="metric-label">Забанено</div><div class="metric-val" id="a-banned" style="color:var(--danger)">—</div></div>
+      <div class="metric"><div class="metric-label">Админов</div><div class="metric-val" id="a-admins" style="color:var(--accent2)">—</div></div>
+    </div>
+    <div class="sec">Пользователи</div>
+    <div id="admin-users-list"></div>
+  </div>
+
+  <!-- HOME -->
+  <div class="page" id="p-home">
+    <div class="header">
+      <div style="margin-bottom:14px"><button class="btn btn-sm" onclick="goStart()">← Все сессии</button></div>
+      <h1 id="session-title">Сессия</h1>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:10px">Поделись ссылкой:</p>
+      <div class="link-box" onclick="copyLink()"><span>🔗</span><span id="session-link"></span></div>
+    </div>
+    <div class="sec">Заказы</div>
+    <div id="orders-empty" class="empty" style="display:none"><div class="empty-icon">🧾</div>Пока нет заказов — добавь первый</div>
+    <div id="orders-list"></div>
+    <div class="actions">
+      <button class="btn" onclick="goNewOrder()">+ Новый заказ</button>
+      <button class="btn btn-primary" id="btn-summary" onclick="goSummary()" style="display:none">Итог →</button>
+    </div>
+  </div>
+
+  <!-- ORDER FORM -->
+  <div class="page" id="p-order">
+    <div class="nav"><button class="btn btn-sm" onclick="goHome()">← Назад</button><h2 id="order-form-title">Новый заказ</h2></div>
+
+    <div class="sec">Фото</div>
+    <div class="card" style="padding:14px 16px">
+      <div id="img-preview-wrap" style="display:none" class="img-preview-wrap">
+        <img id="img-preview" class="img-preview" src="" alt=""/>
+        <button class="img-remove-btn" onclick="removeImage()">×</button>
+      </div>
+      <div id="img-upload-zone" class="img-upload-zone">
+        <input type="file" id="img-file-input" accept="image/*" onchange="handleImageUpload(this)"/>
+        <div class="img-upload-icon">📷</div>
+        <div class="img-upload-text">Нажми или перетащи фото<br><strong>JPG, PNG, WEBP</strong> до 8 МБ</div>
+      </div>
+      <div id="img-uploading" class="img-uploading" style="display:none">⏳ Загружаем...</div>
+    </div>
+
+    <div class="sec">Позиции <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:12px;color:var(--muted)">— название и сумма каждой</span></div>
+    <div class="card" style="padding:16px 18px">
+      <div id="items-list"></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px;flex-wrap:wrap;gap:8px">
+        <button class="btn btn-sm" onclick="addItemRow()">+ Позиция</button>
+        <div class="total-badge">Итого: <span id="items-total">0,00 ₽</span></div>
+      </div>
+    </div>
+
+    <div class="sec">Участники <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:12px;color:var(--muted)">— первый платил за всех</span></div>
+    <div class="card" style="padding:16px 18px">
+      <div id="participants-list"></div>
+      <div style="display:flex;gap:8px;margin-top:6px;flex-wrap:wrap">
+        <button class="btn btn-sm" onclick="addParticipantRow()">+ Участник</button>
+        <button class="btn btn-sm" onclick="splitEvenly()" style="color:var(--accent2);border-color:rgba(124,111,255,.3);background:rgba(124,111,255,.08)">⚡ Поделить поровну</button>
+      </div>
+    </div>
+    <div id="order-err" class="err" style="display:none"></div>
+    <div class="actions" style="margin-top:6px"><button class="btn btn-primary" onclick="saveOrder()">Сохранить</button></div>
+  </div>
+
+  <!-- SUMMARY -->
+  <div class="page" id="p-summary">
+    <div class="nav"><button class="btn btn-sm" onclick="goHome()">← Назад</button><h2>Итог</h2></div>
+    <div class="metrics">
+      <div class="metric"><div class="metric-label">Всего</div><div class="metric-val" id="s-total">—</div></div>
+      <div class="metric"><div class="metric-label">Заказов</div><div class="metric-val" id="s-orders">—</div></div>
+      <div class="metric"><div class="metric-label">Людей</div><div class="metric-val" id="s-people">—</div></div>
+    </div>
+    <div class="tabs">
+      <button class="tab active" onclick="showTab('debts')">Переводы</button>
+      <button class="tab" onclick="showTab('persons')">По людям</button>
+    </div>
+    <div id="tab-debts"><div class="sec">Кто кому переводит</div><div id="s-debts-list"></div></div>
+    <div id="tab-persons" style="display:none"><div class="sec">Каждый потратил</div><div class="card" id="s-persons-list"></div></div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- Theme toggle -->
+<button id="theme-btn" onclick="toggleTheme()" style="position:fixed;top:22px;left:24px;z-index:100;width:38px;height:38px;border-radius:50%;border:1px solid var(--glass-border);background:var(--glass);backdrop-filter:blur(8px);cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;transition:background .2s,border-color .2s,transform .15s" title="Сменить тему">🌙</button>
+
+<div id="clock" style="position:fixed;top:20px;right:24px;z-index:100;pointer-events:none;text-align:right">
+  <div id="clock-time" style="font-size:28px;font-weight:800;letter-spacing:-1px;font-family:monospace;background:linear-gradient(135deg,#fff 30%,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1"></div>
+  <div style="font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.3);margin-top:3px">Екатеринбург</div>
+</div>
+
+<div id="tip" style="position:fixed;bottom:32px;right:24px;z-index:100;max-width:320px;background:linear-gradient(135deg,rgba(30,24,60,.97),rgba(20,18,45,.97));border:1px solid rgba(124,111,255,.3);backdrop-filter:blur(20px);border-radius:20px;padding:18px 20px;opacity:0;transform:translateY(12px) scale(.97);transition:opacity .45s,transform .45s;pointer-events:none;box-shadow:0 8px 32px rgba(0,0,0,.4)">
+  <div id="tip-emoji" style="font-size:24px;margin-bottom:8px"></div>
+  <div id="tip-text" style="font-size:15px;font-weight:600;color:#f0f0f8;line-height:1.5"></div>
+  <div style="margin-top:10px;height:2px;border-radius:2px;background:linear-gradient(90deg,#7c6fff,#a855f7);opacity:.5"></div>
+</div>
+
+<script>
+const API='';
+let sessionId=null,sessionData=null,summaryData=null;
+let editOrderId=null,participantCount=0,currentImagePath='';
+let currentUser=null,currentDisplayName='',currentPhone='',currentBank='',isAdmin=false;
+let resetPwUserId=null;
+
+const fmt=n=>parseFloat(n).toLocaleString('ru-RU',{minimumFractionDigits:2,maximumFractionDigits:2})+' ₽';
+const $=id=>document.getElementById(id);
+
+function toast(msg,emoji=''){
+  const t=$('toast');t.textContent=(emoji?emoji+' ':'')+msg;
+  t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2400);
+}
+function showPage(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  $(id).classList.add('active');window.scrollTo({top:0,behavior:'smooth'});
+}
+
+// ── Clock ─────────────────────────────────────────────────────────────────────
+function updateClock(){
+  const now=new Date();
+  $('clock-time').textContent=`${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
+}
+setInterval(updateClock,1000);updateClock();
+
+// ── Tips ──────────────────────────────────────────────────────────────────────
+const tips=[
+  ['💸','«Я заплачу в следующий раз» — классика жанра'],
+  ['🫙','Долг — это тот же кредит, только без процентов. Пока.'],
+  ['🙃','Кто-то уже третий месяц «не забыл, просто не перевёл»'],
+  ['🧾','Ты не забыл сколько должен. Ты просто надеялся, что забудем мы.'],
+  ['💀','«Скинь реквизиты» — и тишина навеки'],
+  ['🤑','Деньги не портят людей. Долги — портят.'],
+  ['😇','Хороший друг — тот, кто возвращает без напоминаний'],
+  ['🫠','«Ой, я думал ты пошутил про деньги»'],
+  ['📱','Уведомление о переводе — лучший звук на свете'],
+  ['🍕','Съел за 500₽, вспоминает об этом уже на 3000₽'],
+  ['👻','Некоторые долги живут дольше, чем дружба'],
+  ['🎭','«У меня нет с собой» — при оплате картой'],
+  ['🫡','Перевёл сразу — значит воспитан'],
+  ['💅','Нет ничего элегантнее того, кто скидывает без напоминания'],
+  ['🤝','Дружба проверяется совместным счётом в ресторане'],
+];
+let tipIdx=Math.floor(Math.random()*tips.length),tipTimer=null;
+function showTip(){
+  const el=$('tip'),emoji=$('tip-emoji'),text=$('tip-text');
+  el.style.animation='tipOut .4s ease forwards';
+  setTimeout(()=>{
+    tipIdx=(tipIdx+1)%tips.length;
+    emoji.textContent=tips[tipIdx][0];text.textContent=tips[tipIdx][1];
+    el.style.animation='tipIn .45s ease forwards';
+    clearTimeout(tipTimer);tipTimer=setTimeout(()=>{el.style.animation='tipOut .4s ease forwards';},8000);
+  },400);
+}
+setTimeout(showTip,3000);setInterval(showTip,30000);
+
+// ── Phone ─────────────────────────────────────────────────────────────────────
+function formatPhone(input){
+  let v=input.value.replace(/\D/g,'');
+  if(v.startsWith('8'))v='7'+v.slice(1);
+  if(!v.startsWith('7'))v='7'+v;
+  v=v.slice(0,11);
+  let r='+7';
+  if(v.length>1)r+=' ('+v.slice(1,4);
+  if(v.length>4)r+=') '+v.slice(4,7);
+  if(v.length>7)r+='-'+v.slice(7,9);
+  if(v.length>9)r+='-'+v.slice(9,11);
+  input.value=r;
+}
+
+// ── Auth ──────────────────────────────────────────────────────────────────────
+let authMode='login';
+function switchAuthTab(mode){
+  authMode=mode;
+  $('tab-login').classList.toggle('active',mode==='login');
+  $('tab-register').classList.toggle('active',mode==='register');
+  $('auth-btn-text').textContent=mode==='login'?'Войти':'Зарегистрироваться';
+  $('auth-err').style.display='none';
+}
+async function submitAuth(){
+  const username=$('auth-username').value.trim();
+  const password=$('auth-password').value.trim();
+  const errEl=$('auth-err');errEl.style.display='none';
+  const res=await fetch(authMode==='login'?'/api/auth/login':'/api/auth/register',{
+    method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username,password})});
+  const data=await res.json();
+  if(!res.ok){
+    errEl.textContent=data.error||'Ошибка';errEl.style.display='block';
+    errEl.style.animation='none';requestAnimationFrame(()=>{errEl.style.animation='shake .3s ease';});
+    return;
+  }
+  currentUser=data.username;currentDisplayName=data.display_name||'';
+  currentPhone=data.phone||'';currentBank=data.bank||'';isAdmin=data.is_admin||false;
+  toast(`Привет, ${currentUser}!`,'👋');await initApp();
+}
+async function logout(){
+  await fetch('/api/auth/logout',{method:'POST'});
+  currentUser=null;currentDisplayName='';currentPhone='';currentBank='';isAdmin=false;
+  sessionId=null;sessionData=null;history.pushState({},'',location.pathname);showPage('p-auth');
+}
+
+// ── Profile ───────────────────────────────────────────────────────────────────
+function renderProfileBox(){
+  const wrap=$('profile-box-wrap');
+  if(!currentUser){wrap.innerHTML='';return;}
+  const hasName=!!currentDisplayName;
+  const rekvizity=[];if(currentPhone)rekvizity.push(currentPhone);if(currentBank)rekvizity.push(currentBank);
+  wrap.innerHTML=`<div class="profile-box">
+    <div style="flex:1;min-width:0">
+      <div style="font-size:13px;font-weight:600;color:var(--accent2);display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        👤 ${esc(currentUser)}
+        ${isAdmin?'<span class="badge badge-admin">ADMIN</span>':''}
+        <button onclick="logout()" style="background:none;border:none;color:rgba(255,255,255,.3);cursor:pointer;font-size:12px;font-family:inherit">Выйти</button>
+      </div>
+      <div style="font-size:12px;color:var(--muted);margin-top:4px">
+        ${hasName?'Имя: <strong style="color:var(--accent2)">'+esc(currentDisplayName)+'</strong>':'<span style="color:var(--danger)">⚠ Укажи имя в заказах</span>'}
+        ${rekvizity.length?' · '+rekvizity.map(esc).join(' · '):''}
+      </div>
+    </div>
+    <button class="profile-edit-btn" onclick="openProfileModal()">✏ Профиль</button>
+  </div>`;
+  $('btn-admin').style.display=isAdmin?'':'none';
+}
+function openProfileModal(){
+  $('profile-display-name').value=currentDisplayName;
+  $('profile-phone').value=currentPhone||'';
+  $('profile-bank').value=currentBank||'';
+  $('modal-profile').style.display='block';
+  setTimeout(()=>$('profile-display-name').focus(),100);
+}
+function closeProfileModal(){$('modal-profile').style.display='none';}
+async function saveProfile(){
+  const name=$('profile-display-name').value.trim();
+  const phone=$('profile-phone').value.trim();
+  const bank=$('profile-bank').value;
+  const res=await fetch('/api/auth/profile',{method:'PUT',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({display_name:name,phone,bank})});
+  const data=await res.json();
+  if(data.ok){
+    currentDisplayName=data.display_name;currentPhone=data.phone||'';currentBank=data.bank||'';
+    renderProfileBox();$('modal-profile').style.display='none';toast('Профиль сохранён','✅');loadStats();
+  }
+}
+
+// ── Admin ─────────────────────────────────────────────────────────────────────
+async function goAdmin(){showPage('p-admin');await loadAdminUsers();}
+async function loadAdminUsers(){
+  const res=await fetch('/api/admin/users');
+  if(!res.ok){toast('Нет доступа','❌');return;}
+  const users=await res.json();
+  $('a-users').textContent=users.length;
+  $('a-banned').textContent=users.filter(u=>u.is_banned).length;
+  $('a-admins').textContent=users.filter(u=>u.is_admin).length;
+  const list=$('admin-users-list');list.innerHTML='';
+  users.forEach((u,i)=>{
+    const el=document.createElement('div');
+    el.className=`admin-user-card${u.is_banned?' banned':''} anim-${Math.min(i+1,4)}`;
+    const date=new Date(u.created_at).toLocaleDateString('ru-RU',{day:'numeric',month:'short',year:'numeric'});
+    const rek=[];if(u.phone)rek.push(u.phone);if(u.bank)rek.push(u.bank);
+    el.innerHTML=`<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <div style="flex:1;min-width:0">
+        <div class="admin-user-name">${esc(u.username)}
+          ${u.is_admin?'<span class="badge badge-admin" style="margin-left:6px">ADMIN</span>':''}
+          ${u.is_banned?'<span class="badge badge-banned" style="margin-left:6px">БАН</span>':''}
+        </div>
+        <div class="admin-user-meta">${u.display_name?'Имя: '+esc(u.display_name)+' · ':''}${rek.length?rek.map(esc).join(' · ')+' · ':''}Зарег.: ${date} · Сессий: ${u.session_count}</div>
+      </div></div>
+      <div class="admin-user-actions">
+        <button class="btn btn-xs btn-warning" onclick="openResetPassword('${u.id}','${esc(u.username)}')">🔑 Пароль</button>
+        <button class="btn btn-xs" style="background:rgba(251,191,36,.1);color:#fbbf24;border-color:rgba(251,191,36,.3)" onclick="kickUser('${u.id}','${esc(u.username)}')">⚡ Выбросить</button>
+        <button class="btn btn-xs ${u.is_banned?'btn-success':'btn-danger'}" onclick="toggleBan('${u.id}',${u.is_banned})">${u.is_banned?'✓ Разбанить':'🚫 Забанить'}</button>
+        <button class="btn btn-xs ${u.is_admin?'btn-warning':'btn-sm'}" onclick="toggleAdmin('${u.id}',${u.is_admin})">${u.is_admin?'⬇ Снять админа':'⬆ Сделать админом'}</button>
+        <button class="btn btn-xs btn-danger" onclick="deleteUser('${u.id}','${esc(u.username)}')">🗑 Удалить</button>
+      </div>`;
+    list.appendChild(el);
+  });
+}
+function openResetPassword(userId,username){
+  resetPwUserId=userId;$('reset-pw-sub').textContent=`Новый пароль для: ${username}`;
+  $('reset-pw-input').value='';$('reset-pw-err').style.display='none';
+  $('modal-reset-pw').style.display='block';setTimeout(()=>$('reset-pw-input').focus(),100);
+}
+async function confirmResetPassword(){
+  const pw=$('reset-pw-input').value.trim();const errEl=$('reset-pw-err');
+  if(!pw||pw.length<4){errEl.textContent='Пароль минимум 4 символа';errEl.style.display='block';return;}
+  const res=await fetch(`/api/admin/users/${resetPwUserId}/reset-password`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:pw})});
+  const data=await res.json();
+  if(data.ok){$('modal-reset-pw').style.display='none';toast('Пароль изменён','🔑');}
+  else{errEl.textContent=data.error||'Ошибка';errEl.style.display='block';}
+}
+async function toggleBan(userId,isBanned){
+  const res=await fetch(`/api/admin/users/${userId}/ban`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({banned:!isBanned})});
+  const data=await res.json();
+  if(data.ok){toast(isBanned?'Разбанен':'Забанен',isBanned?'✅':'🚫');loadAdminUsers();}
+  else toast(data.error,'❌');
+}
+async function toggleAdmin(userId,isAdminNow){
+  const res=await fetch(`/api/admin/users/${userId}/toggle-admin`,{method:'POST'});
+  const data=await res.json();
+  if(data.ok){toast(data.is_admin?'Права выданы':'Права сняты','⚙');loadAdminUsers();}
+  else toast(data.error,'❌');
+}
+async function deleteUser(userId,username){
+  if(!confirm(`Удалить пользователя "${username}"?`))return;
+  const res=await fetch(`/api/admin/users/${userId}`,{method:'DELETE'});
+  const data=await res.json();
+  if(data.ok){toast('Удалён','🗑');loadAdminUsers();}else toast(data.error,'❌');
+}
+async function kickUser(userId,username){
+  if(!confirm(`Выбросить ${username} с сайта?`))return;
+  const res=await fetch(`/api/admin/users/${userId}/kick`,{method:'POST'});
+  const data=await res.json();
+  if(data.ok){toast(`${username} выброшен`,'⚡');loadAdminUsers();}else toast(data.error||'Ошибка','❌');
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+window.addEventListener('load',async()=>{
+  const res=await fetch('/api/auth/me');const data=await res.json();
+  if(data.user_id){
+    currentUser=data.username;currentDisplayName=data.display_name||'';
+    currentPhone=data.phone||'';currentBank=data.bank||'';isAdmin=data.is_admin||false;
+    await initApp();
+  }else showPage('p-auth');
+});
+async function initApp(){
+  renderProfileBox();
+  const sid=new URLSearchParams(location.search).get('s');
+  if(sid){sessionId=sid;loadSession();}
+  else{await loadHistory();showPage('p-start');}
+}
+
+// ── History ───────────────────────────────────────────────────────────────────
+async function loadHistory(){
+  const res=await fetch(`${API}/api/sessions?limit=20`);
+  if(res.status===401){logout();return;}
+  const sessions=await res.json();
+  const list=$('history-list');list.innerHTML='';
+  if(sessions.length===0){$('history-empty').style.display='';loadStats();return;}
+  $('history-empty').style.display='none';
+  sessions.forEach((s,i)=>{
+    const date=new Date(s.created_at).toLocaleDateString('ru-RU',{day:'numeric',month:'short',year:'numeric'});
+    const isOwner=s.is_owner;const el=document.createElement('div');
+    el.className=`history-item anim-${Math.min(i+1,4)}`;
+    el.innerHTML=`<div class="history-icon ${isOwner?'':'shared'}">${isOwner?'🧾':'🔗'}</div>
+      <div class="history-info">
+        <div class="history-name">${esc(s.name)}</div>
+        <div class="history-meta">${date} · ${s.order_count} заказ${declension(s.order_count,['','а','ов'])}${isOwner?'':' · <span style="color:var(--success);font-weight:600">чужая</span>'}</div>
+      </div>
+      <div class="history-total">${fmt(s.total)}</div>
+      <button class="history-del" onclick="${isOwner?`deleteSessionFromHistory(event,'${s.id}')`:`leaveSession(event,'${s.id}')`}" title="${isOwner?'Удалить':'Убрать'}">×</button>`;
+    el.addEventListener('click',(e)=>{if(!e.target.closest('.history-del'))openSession(s.id);});
+    list.appendChild(el);
+  });
+  loadStats();
+}
+function declension(n,forms){
+  const abs=Math.abs(n)%100,n1=abs%10;
+  if(abs>10&&abs<20)return forms[2];if(n1>1&&n1<5)return forms[1];if(n1===1)return forms[0];return forms[2];
+}
+async function loadStats(){
+  const saved=localStorage.getItem('statsVisible');
+  if(saved==='0'){
+    statsVisible=false;
+    const wrap=$('stats-wrap');if(wrap){wrap.style.maxHeight='0';wrap.style.opacity='0';}
+    const arrow=$('stats-toggle-arrow');if(arrow)arrow.style.transform='rotate(-90deg)';
+    const label=$('stats-toggle-label');if(label)label.textContent='Показать';
+    const btn=$('stats-toggle-btn');if(btn){btn.style.background='rgba(124,111,255,.04)';btn.style.borderColor='rgba(124,111,255,.12)';}
+  }
+  const res=await fetch(`${API}/api/stats`);const s=await res.json();
+  const block=$('stats-block');
+  if(!s.top_payers.length&&!s.top_debtors.length&&!s.i_owe?.length){block.innerHTML='';return;}
+  let iOweHtml='';
+  if(s.i_owe&&s.i_owe.length>0){
+    iOweHtml=`<div class="card" style="padding:16px 18px;margin-bottom:10px;border-color:var(--danger-border)">
+      <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--danger);margin-bottom:12px">😬 Я должен</div>
+      ${s.i_owe.map(d=>`<div class="owe-row"><div class="owe-left">
+        <div class="owe-creditor">${esc(d.creditor)}</div>
+        <div class="owe-session">📁 ${esc(d.session_name)}</div>
+        ${d.phone||d.bank?`<div class="owe-contact">${[d.phone,d.bank].filter(Boolean).map(esc).join(' · ')}</div>`:''}
+      </div><div class="owe-amt">${fmt(d.remaining)}</div></div>`).join('')}
+      <div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,107,107,.2);display:flex;justify-content:space-between;align-items:center">
+        <span style="font-size:12px;color:var(--muted)">Итого долгов</span>
+        <span style="font-size:16px;font-weight:800;color:var(--danger)">${fmt(s.i_owe.reduce((a,d)=>a+d.remaining,0))}</span>
+      </div></div>`;
+  }else if(currentDisplayName){
+    iOweHtml=`<div class="card" style="padding:14px 18px;margin-bottom:10px;border-color:var(--success-border)"><div style="font-size:13px;font-weight:600;color:var(--success)">✅ Нет долгов — ты чист!</div></div>`;
+  }
+  block.innerHTML=`${iOweHtml}
+    <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:10px">
+      <div class="card" style="padding:16px 18px">
+        <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#a78bfa;margin-bottom:12px">🏆 Чаще всех платил</div>
+        ${s.top_payers.map((p,i)=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.06);font-size:13px">
+          <div style="display:flex;align-items:center;gap:8px"><span style="font-size:11px;font-weight:700;color:rgba(255,255,255,.3);min-width:16px">${i+1}</span><span style="font-weight:600">${esc(p.name)}</span></div>
+          <div style="text-align:right"><div style="font-weight:700;font-size:13px;background:linear-gradient(135deg,#fff,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent">${fmt(p.paid_total)}</div>
+          <div style="font-size:11px;color:rgba(255,255,255,.35)">${p.times} раз${p.times>1?'а':''}</div></div></div>`).join('')}
+      </div>
+      <div class="card" style="padding:16px 18px">
+        <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#ff6b6b;margin-bottom:12px">💸 Больше всех должен</div>
+        ${s.top_debtors.map((p,i)=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.06);font-size:13px">
+          <div style="display:flex;align-items:center;gap:8px"><span style="font-size:11px;font-weight:700;color:rgba(255,255,255,.3);min-width:16px">${i+1}</span><span style="font-weight:600">${esc(p.name)}</span></div>
+          <div style="text-align:right"><div style="font-weight:700;font-size:13px;color:#ff6b6b">${fmt(p.owed_total)}</div>
+          <div style="font-size:11px;color:rgba(255,255,255,.35)">${p.times} заказ${p.times===1?'':p.times<5?'а':'ов'}</div></div></div>`).join('')}
+      </div>
+    </div>
+    <div class="card" style="padding:16px 18px">
+      <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#4ade80;margin-bottom:12px">🍽 Самые дорогие заказы</div>
+      ${s.top_orders.map((o,i)=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.06);font-size:13px">
+        <div style="display:flex;align-items:center;gap:8px"><span style="font-size:11px;font-weight:700;color:rgba(255,255,255,.3);min-width:16px">${i+1}</span>
+        <div><div style="font-weight:600">${esc(o.name)}</div><div style="font-size:11px;color:rgba(255,255,255,.35)">${esc(o.session_name)}</div></div></div>
+        <div style="font-weight:700;font-size:13px;color:#4ade80">${fmt(o.total)}</div></div>`).join('')}
+      <div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,.08);display:flex;justify-content:space-between;align-items:center">
+        <span style="font-size:12px;color:rgba(255,255,255,.4)">Всего потрачено за всё время</span>
+        <span style="font-size:16px;font-weight:800;background:linear-gradient(135deg,#fff,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent">${fmt(s.grand_total)}</span>
+      </div>
+    </div>`;
+}
+async function deleteSessionFromHistory(e,id){
+  e.stopPropagation();if(!confirm('Удалить сессию и все её заказы?'))return;
+  await fetch(`${API}/api/sessions/${id}`,{method:'DELETE'});toast('Сессия удалена','🗑');loadHistory();
+}
+async function leaveSession(e,id){
+  e.stopPropagation();if(!confirm('Убрать эту сессию из твоего списка?'))return;
+  await fetch(`${API}/api/sessions/${id}/leave`,{method:'POST'});toast('Сессия убрана','👋');loadHistory();
+}
+function openSession(id){sessionId=id;history.pushState({},'',`?s=${id}`);loadSession();}
+async function goStart(){
+  sessionId=null;sessionData=null;history.pushState({},'',location.pathname);
+  await loadHistory();showPage('p-start');
+}
+
+// ── Session ───────────────────────────────────────────────────────────────────
+async function createSession(){
+  const name=prompt('Название сессии (необязательно):','')?? '';
+  const res=await fetch(`${API}/api/sessions`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:name.trim()||'Новая сессия'})});
+  const data=await res.json();
+  sessionId=data.id;history.pushState({},'',`?s=${sessionId}`);await loadSession();
+}
+function openSessionPrompt(){
+  const url=prompt('Вставь ссылку на сессию:');if(!url)return;
+  try{
+    const u=new URL(url.includes('http')?url:location.origin+url);
+    const sid=u.searchParams.get('s');
+    if(!sid){alert('Ссылка не содержит ID сессии');return;}
+    openSession(sid);
+  }catch{alert('Некорректная ссылка');}
+}
+async function loadSession(){
+  const res=await fetch(`${API}/api/sessions/${sessionId}`);
+  if(!res.ok){alert('Сессия не найдена');return;}
+  sessionData=await res.json();
+  $('session-title').textContent=sessionData.session.name;
+  $('session-link').textContent=`${location.origin}${location.pathname}?s=${sessionId}`;
+  renderOrders();showPage('p-home');
+}
+function copyLink(){
+  const link=`${location.origin}${location.pathname}?s=${sessionId}`;
+  if(navigator.clipboard&&location.protocol==='https:'){
+    navigator.clipboard.writeText(link).then(()=>toast('Ссылка скопирована','🔗'));
+  }else{
+    const ta=document.createElement('textarea');ta.value=link;ta.style.position='fixed';ta.style.opacity='0';
+    document.body.appendChild(ta);ta.focus();ta.select();
+    try{document.execCommand('copy');toast('Ссылка скопирована','🔗');}
+    catch{toast('Скопируй вручную','⚠️');}
+    document.body.removeChild(ta);
+  }
+}
+function renderOrders(){
+  const list=$('orders-list');list.innerHTML='';
+  const orders=sessionData.orders||[];
+  if(orders.length===0){$('orders-empty').style.display='';$('btn-summary').style.display='none';return;}
+  $('orders-empty').style.display='none';$('btn-summary').style.display='';
+  orders.forEach((o,i)=>{
+    const names=o.participants.map(p=>p.name).join(', ');
+    const el=document.createElement('div');el.className=`order-item anim-${Math.min(i+1,4)}`;
+    el.onclick=(e)=>{if(!e.target.closest('button'))goEditOrder(o.id);};
+    const imgHtml=o.image_path?`<img class="order-item-img" src="${esc(o.image_path)}" alt="${esc(o.name)}" loading="lazy"/>`:'';
+    el.innerHTML=`${imgHtml}<div class="order-item-body">
+      <div class="order-item-header">
+        <div><div class="order-item-title">${esc(o.name)}</div><div class="order-item-meta">${esc(names)}</div></div>
+        <div class="order-item-total">${fmt(o.total)}</div>
+      </div>
+      <div class="order-item-actions">
+        <button class="btn btn-sm" onclick="goEditOrder('${o.id}')">Изменить</button>
+        <button class="btn btn-sm" onclick="repeatOrder('${o.id}')">Повторить</button>
+        <button class="btn btn-sm btn-danger" onclick="deleteOrder('${o.id}')">Удалить</button>
+      </div></div>`;
+    list.appendChild(el);
+  });
+}
+
+// ── Image ─────────────────────────────────────────────────────────────────────
+async function handleImageUpload(input){
+  const file=input.files[0];if(!file)return;
+  $('img-upload-zone').style.display='none';$('img-uploading').style.display='block';
+  const fd=new FormData();fd.append('file',file);
+  try{
+    const res=await fetch(`${API}/api/upload`,{method:'POST',body:fd});const data=await res.json();
+    if(data.path){currentImagePath=data.path;showImagePreview(data.path);toast('Фото загружено','📷');}
+    else{toast(data.error||'Ошибка','❌');resetImageZone();}
+  }catch{toast('Ошибка загрузки','❌');resetImageZone();}
+}
+function showImagePreview(path){$('img-preview').src=path;$('img-preview-wrap').style.display='block';$('img-upload-zone').style.display='none';$('img-uploading').style.display='none';}
+function removeImage(){currentImagePath='';$('img-preview').src='';$('img-preview-wrap').style.display='none';$('img-file-input').value='';resetImageZone();}
+function resetImageZone(){$('img-upload-zone').style.display='block';$('img-uploading').style.display='none';}
+
+// ── Items ─────────────────────────────────────────────────────────────────────
+function recalcPayerAmount(){
+  const rows=$('items-list').querySelectorAll('.item-row');
+  let total=0;rows.forEach(r=>{total+=parseFloat(r.querySelector('[data-item="amount"]').value)||0;});
+  const payerInput=$('participants-list').querySelector('.participant-block:first-child [data-field="amount"]');
+  if(payerInput)payerInput.value=total>0?total.toFixed(2):'';
+  $('items-total').textContent=fmt(total);
+}
+function addItemRow(name='',amount=''){
+  const list=$('items-list');
+  const row=document.createElement('div');row.className='item-row';
+  row.innerHTML=`
+    <input type="text" placeholder="Название позиции" value="${esc(String(name))}" style="flex:2" data-item="name"/>
+    <input type="number" placeholder="Сумма" value="${amount||''}" min="0" step="0.01" style="flex:1;min-width:90px" data-item="amount" oninput="recalcPayerAmount()"/>
+    <span class="lbl">₽</span>
+    <button class="btn btn-icon" onclick="removeItemRow(this)">×</button>`;
+  list.appendChild(row);recalcPayerAmount();
+}
+function removeItemRow(btn){
+  const list=$('items-list');if(list.children.length<=1)return;
+  btn.closest('.item-row').remove();recalcPayerAmount();
+}
+
+// ── Order form ────────────────────────────────────────────────────────────────
+function goNewOrder(){
+  editOrderId=null;currentImagePath='';
+  $('order-form-title').textContent='Новый заказ';
+  $('items-list').innerHTML='';$('participants-list').innerHTML='';$('order-err').style.display='none';
+  removeImage();participantCount=0;
+  addItemRow();
+  addParticipantRow('','',currentPhone,currentBank);
+  addParticipantRow();
+  showPage('p-order');
+}
+function goEditOrder(orderId){
+  const order=sessionData.orders.find(o=>o.id===orderId);if(!order)return;
+  editOrderId=orderId;currentImagePath=order.image_path||'';
+  $('order-form-title').textContent='Изменить заказ';
+  $('items-list').innerHTML='';$('participants-list').innerHTML='';$('order-err').style.display='none';
+  if(currentImagePath)showImagePreview(currentImagePath);else removeImage();
+  // Позиции: если есть items — используем, иначе одна позиция из name
+  const items=order.items||[{name:order.name,amount:''}];
+  items.forEach(it=>addItemRow(it.name,it.amount||''));
+  participantCount=0;order.participants.forEach(p=>addParticipantRow(p.name,p.amount,p.phone||'',p.bank||''));
+  showPage('p-order');
+}
+
+function clampDebtor(input){
+  const list=$('participants-list');
+  const payerInput=list.querySelector('.participant-block:first-child [data-field="amount"]');
+  const max=parseFloat(payerInput?.value)||0;if(max<=0)return;
+  const val=parseFloat(input.value)||0;
+  if(val>max){
+    input.value=max;input.style.borderColor='var(--danger)';
+    toast('Сумма не может превышать сумму плательщика','⚠️');
+    setTimeout(()=>{input.style.borderColor='';},1500);
+  }
+}
+
+function addParticipantRow(name='',amount='',phone='',bank=''){
+  const list=$('participants-list');
+  const isFirst=list.children.length===0;
+  const block=document.createElement('div');
+  block.className='participant-block';block.style.animation='fadeUp .3s ease both';
+  if(isFirst){
+    block.innerHTML=`
+      <div class="form-row">
+        <input type="text" placeholder="Имя (платил)" value="${esc(String(name))}" style="flex:2" data-field="name"/>
+        <input type="number" placeholder="Сумма" value="${amount||''}" min="0" step="0.01" style="flex:1;min-width:90px" data-field="amount" readonly/>
+        <span class="lbl">₽</span><div style="width:34px;flex-shrink:0"></div>
+      </div>
+      <div class="payer-extra">
+        <div class="payer-extra-label">Реквизиты для перевода</div>
+        <div class="form-row" style="margin-bottom:10px">
+          <input type="tel" placeholder="+7 (900) 000-00-00" value="${esc(String(phone))}" data-field="phone" oninput="formatPhone(this)"/>
+        </div>
+        <div class="form-row" style="margin-bottom:0">
+          <select data-field="bank" style="width:100%">
+            <option value="">— не указан —</option>
+            <option value="Сбер" ${bank==='Сбер'?'selected':''}>Сбер</option>
+            <option value="Т-Банк" ${bank==='Т-Банк'?'selected':''}>Т-Банк</option>
+            <option value="УБРИР" ${bank==='УБРИР'?'selected':''}>УБРИР</option>
+            <option value="Альфа" ${bank==='Альфа'?'selected':''}>Альфа</option>
+            <option value="Райффайзен" ${bank==='Райффайзен'?'selected':''}>Райффайзен</option>
+          </select>
+        </div>
+      </div>`;
+  }else{
+    block.innerHTML=`
+      <div class="form-row" style="margin-bottom:0">
+        <input type="text" placeholder="Имя" value="${esc(String(name))}" style="flex:2" data-field="name"/>
+        <input type="number" placeholder="Сумма" value="${amount||''}" min="0" step="0.01" style="flex:1;min-width:90px" data-field="amount" oninput="clampDebtor(this)"/>
+        <span class="lbl">₽</span>
+        <button class="btn btn-icon" onclick="removeRow(this)">×</button>
+      </div>`;
+  }
+  list.appendChild(block);participantCount++;
+}
+function splitEvenly(){
+  const list=$('participants-list');
+  const blocks=list.querySelectorAll('.participant-block');
+  if(blocks.length<2){toast('Добавь хотя бы одного участника кроме плательщика','⚠️');return;}
+  const payerAmtInput=blocks[0].querySelector('[data-field="amount"]');
+  const total=parseFloat(payerAmtInput?.value)||0;
+  if(total<=0){toast('Сначала укажи позиции с суммами','⚠️');return;}
+  // Делим на ВСЕХ включая плательщика
+  const totalPeople=blocks.length;
+  const share=Math.floor((total/totalPeople)*100)/100;
+  const remainder=Math.round((total-share*totalPeople)*100)/100;
+  // Плательщик уже заплатил за всех — каждый должник возвращает свою долю
+  // Плательщик оставляет себе свою долю, остальные должны ему (total - payerShare)
+  const debtors=[...blocks].slice(1);
+  debtors.forEach((b,i)=>{
+    const inp=b.querySelector('[data-field="amount"]');
+    if(inp)inp.value=(i===0?(share+remainder):share).toFixed(2);
+  });
+  toast(`${totalPeople} чел. · каждый по ${fmt(share)}`,'⚡');
+}
+function removeRow(btn){
+  const list=$('participants-list');if(list.children.length<=1)return;
+  const block=btn.closest('.participant-block');
+  block.style.animation='fadeUp .2s ease reverse';setTimeout(()=>block.remove(),180);
+}
+
+async function saveOrder(){
+  const err=$('order-err');err.style.display='none';
+  // Позиции
+  const itemRows=$('items-list').querySelectorAll('.item-row');
+  const items=[];
+  for(let r of itemRows){
+    const n=r.querySelector('[data-item="name"]').value.trim();
+    const a=parseFloat(r.querySelector('[data-item="amount"]').value)||0;
+    if(!n){err.textContent='Укажи название каждой позиции';err.style.display='block';return;}
+    if(a<=0){err.textContent='Укажи сумму каждой позиции';err.style.display='block';return;}
+    items.push({name:n,amount:a});
+  }
+  if(!items.length){err.textContent='Добавь хотя бы одну позицию';err.style.display='block';return;}
+  const name=items.map(i=>i.name).join(', ');
+  const totalAmount=items.reduce((s,i)=>s+i.amount,0);
+  // Участники
+  const blocks=$('participants-list').querySelectorAll('.participant-block');
+  const participants=[];
+  for(let [idx,b] of [...blocks].entries()){
+    const nameVal=b.querySelector('[data-field="name"]').value.trim();
+    const amtVal=parseFloat(b.querySelector('[data-field="amount"]').value);
+    const phoneVal=b.querySelector('[data-field="phone"]')?.value.trim()||'';
+    const bankVal=b.querySelector('[data-field="bank"]')?.value||'';
+    if(!nameVal){err.textContent='Укажи имена всех участников';err.style.display='block';return;}
+    if(!amtVal||amtVal<=0){err.textContent='Укажи суммы для всех участников';err.style.display='block';return;}
+    if(idx===0&&!phoneVal){err.textContent='Укажи телефон плательщика';err.style.display='block';return;}
+    if(idx===0&&!bankVal){err.textContent='Укажи банк плательщика';err.style.display='block';return;}
+    if(idx>0&&amtVal>totalAmount){
+      err.textContent=`Сумма участника не может превышать итог (${fmt(totalAmount)})`;
+      err.style.display='block';return;
+    }
+    participants.push({name:nameVal,amount:idx===0?totalAmount:amtVal,phone:phoneVal,bank:bankVal});
+  }
+  const body=JSON.stringify({name,participants,image_path:currentImagePath,items});
+  if(editOrderId){await fetch(`${API}/api/orders/${editOrderId}`,{method:'PUT',headers:{'Content-Type':'application/json'},body});}
+  else{await fetch(`${API}/api/sessions/${sessionId}/orders`,{method:'POST',headers:{'Content-Type':'application/json'},body});}
+  await loadSession();goHome();toast('Заказ сохранён','✅');
+}
+
+async function deleteOrder(orderId){
+  if(!confirm('Удалить этот заказ?'))return;
+  await fetch(`${API}/api/orders/${orderId}`,{method:'DELETE'});
+  await loadSession();toast('Заказ удалён','🗑');
+}
+async function repeatOrder(orderId){
+  const order=sessionData.orders.find(o=>o.id===orderId);if(!order)return;
+  editOrderId=null;currentImagePath=order.image_path||'';
+  $('order-form-title').textContent='Повторить заказ';
+  $('items-list').innerHTML='';$('participants-list').innerHTML='';$('order-err').style.display='none';
+  if(currentImagePath)showImagePreview(currentImagePath);else removeImage();
+  const items=order.items||[{name:order.name,amount:''}];
+  items.forEach(it=>addItemRow(it.name,it.amount||''));
+  participantCount=0;order.participants.forEach(p=>addParticipantRow(p.name,p.amount,p.phone||'',p.bank||''));
+  showPage('p-order');toast('Заказ скопирован — проверь данные','📋');
+}
+function goHome(){showPage('p-home');}
+
+// ── Summary ───────────────────────────────────────────────────────────────────
+async function goSummary(){await loadSummary();showTab('debts');showPage('p-summary');}
+async function loadSummary(){
+  const res=await fetch(`${API}/api/sessions/${sessionId}/summary`);
+  summaryData=await res.json();
+  $('s-total').textContent=fmt(summaryData.grand_total);
+  $('s-orders').textContent=sessionData.orders.length;
+  $('s-people').textContent=summaryData.person_totals.length;
+  const payerContacts={},payerNames=new Set();
+  (sessionData.orders||[]).forEach(o=>{
+    const payer=o.participants.find(p=>p.is_payer);
+    if(payer){payerNames.add(payer.name);if(!payerContacts[payer.name])payerContacts[payer.name]={phone:payer.phone||'',bank:payer.bank||''};}
+  });
+  const dList=$('s-debts-list');dList.innerHTML='';
+  if(summaryData.transactions.length===0){
+    dList.innerHTML=`<div class="card" style="text-align:center;padding:28px;color:var(--success);font-size:15px;font-weight:700"><div style="font-size:32px;margin-bottom:8px">🎉</div>Все долги погашены!</div>`;
+  }else{
+    summaryData.transactions.forEach((t,i)=>{
+      const contact=payerContacts[t.to]||{};
+      const parts=[];if(contact.phone)parts.push(esc(contact.phone));if(contact.bank)parts.push(esc(contact.bank));
+      const contactHtml=parts.length?`<div class="contact-line">${parts.join(' · ')}</div>`:'';
+      const paidNote=t.paid>0&&!t.settled?`<div class="tx-paid-note">Оплачено: ${fmt(t.paid)}</div>`:'';
+      const canRepay=isAdmin||t.from.toLowerCase()===currentDisplayName.toLowerCase();
+      const card=document.createElement('div');card.className=`tx-card ${t.settled?'settled':'owed'} anim-${Math.min(i+1,4)}`;
+      card.innerHTML=`
+        <div class="tx-header">
+          <div class="tx-names">
+            <div class="names-line"><strong>${esc(t.from)}</strong><span style="color:var(--muted);font-size:12px;margin:0 6px">→</span><span>${esc(t.to)}</span></div>
+            ${contactHtml}
+          </div>
+          <div class="tx-right"><div class="tx-amount ${t.settled?'green':'red'}">${fmt(t.settled?t.amount:t.remaining)}</div>${paidNote}</div>
+        </div>
+        <div class="tx-footer">
+          ${canRepay?`<button class="btn-repay ${t.settled?'settled':'owed'}"
+            onclick="toggleRepay(this,'${esc(t.from)}','${esc(t.to)}',${t.amount},${t.remaining},${t.settled})">
+            ${t.settled?'<span class="check-icon">✓</span> Погашено — отменить?':'💸 Вернуть долг'}
+          </button>`:`<span style="font-size:12px;color:var(--muted)">Только ${esc(t.from)} может отметить возврат</span>`}
+          ${!t.settled?`<span style="font-size:12px;color:var(--muted)">осталось ${fmt(t.remaining)}</span>`:''}
+        </div>`;
+      dList.appendChild(card);
+    });
+  }
+  const pList=$('s-persons-list');pList.innerHTML='';
+  summaryData.person_totals.forEach((p,i)=>{
+    const isPayer=payerNames.has(p.name);
+    const theirDebts=summaryData.transactions.filter(t=>t.from===p.name);
+    const allSettled=theirDebts.length>0&&theirDebts.every(t=>t.settled);
+    const hasDebts=theirDebts.length>0;
+    let amtClass='amt-payer';if(!isPayer&&hasDebts)amtClass=allSettled?'amt-settled':'amt-debtor';
+    const div=document.createElement('div');div.className=`person-row anim-${Math.min(i+1,4)}`;
+    div.innerHTML=`<div><span style="font-weight:600">${esc(p.name)}</span>
+      ${isPayer?'<span class="badge badge-muted" style="margin-left:8px">платил</span>':''}
+      ${allSettled?'<span class="badge" style="margin-left:8px;background:rgba(74,222,128,.15);color:var(--success)">вернул</span>':''}
+    </div><span class="${amtClass}">${fmt(p.amount)}</span>`;
+    pList.appendChild(div);
+  });
+}
+async function toggleRepay(btn,from,to,totalAmount,remaining,settled){
+  btn.disabled=true;btn.style.opacity='.6';
+  if(settled){
+    await fetch(`${API}/api/sessions/${sessionId}/repay`,{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({debtor:from,creditor:to})});
+    toast('Возврат отменён','↩️');
+  }else{
+    await fetch(`${API}/api/sessions/${sessionId}/repay`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({debtor:from,creditor:to,amount:remaining})});
+    toast(`${from} вернул долг!`,'🎉');
+  }
+  await loadSummary();
+}
+function showTab(tab){
+  $('tab-debts').style.display=tab==='debts'?'':'none';
+  $('tab-persons').style.display=tab==='persons'?'':'none';
+  document.querySelectorAll('.tab').forEach((btn,i)=>btn.classList.toggle('active',['debts','persons'][i]===tab));
+}
+// ── Theme ─────────────────────────────────────────────────────────────────────
+function toggleTheme(){
+  const isLight=document.documentElement.getAttribute('data-theme')==='light';
+  const next=isLight?'dark':'light';
+  // Плавный fade через opacity body
+  document.body.style.transition='opacity .3s ease';
+  document.body.style.opacity='0';
+  setTimeout(()=>{
+    document.documentElement.setAttribute('data-theme',next);
+    $('theme-btn').textContent=next==='light'?'🔵':'🌙';
+    localStorage.setItem('theme',next);
+    document.body.style.opacity='1';
+    setTimeout(()=>{document.body.style.transition='';},350);
+  },300);
+}
+(function initTheme(){
+  const saved=localStorage.getItem('theme')||'dark';
+  document.documentElement.setAttribute('data-theme',saved);
+  document.addEventListener('DOMContentLoaded',()=>{
+    const btn=$('theme-btn');if(btn)btn.textContent=saved==='light'?'🔵':'🌙';
+  });
+})();
+
+// ── Stats toggle ──────────────────────────────────────────────────────────────
+let statsVisible=true;
+function toggleStats(){
+  statsVisible=!statsVisible;
+  const wrap=$('stats-wrap');
+  const arrow=$('stats-toggle-arrow');
+  const label=$('stats-toggle-label');
+  const btn=$('stats-toggle-btn');
+  if(statsVisible){
+    wrap.style.maxHeight='2000px';wrap.style.opacity='1';
+    arrow.style.transform='rotate(0deg)';label.textContent='Скрыть';
+    btn.style.background='';btn.style.borderColor='';
+  }else{
+    wrap.style.maxHeight='0';wrap.style.opacity='0';
+    arrow.style.transform='rotate(-90deg)';label.textContent='Показать';
+    btn.style.background='rgba(124,111,255,.04)';btn.style.borderColor='rgba(124,111,255,.12)';
+  }
+  localStorage.setItem('statsVisible',statsVisible?'1':'0');
+}
+
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+</script>
+</body>
+</html>
