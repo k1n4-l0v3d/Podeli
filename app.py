@@ -12,6 +12,7 @@ app.config['MAX_CONTENT_LENGTH'] = 8 * 1024 * 1024
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 
 UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), "static", "uploads")
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
 
 def allowed_file(f): return '.' in f and f.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
