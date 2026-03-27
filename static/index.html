@@ -234,9 +234,7 @@
   }
 
   /* ── Theme transition ── */
-  html,body{transition:background .4s ease}
-  *{transition:background-color .35s ease,border-color .35s ease,color .25s ease,box-shadow .35s ease !important}
-  .btn,.history-item,.order-item,.card,.metric,.tx-card,.admin-user-card{transition:background .35s ease,border-color .35s ease,transform .15s ease,box-shadow .35s ease !important}
+  ::view-transition-old(root),::view-transition-new(root){animation-duration:.4s;animation-timing-function:ease}
 
   /* ── Neon blue theme ── */
   [data-theme="light"]{
@@ -1156,15 +1154,12 @@ function splitEvenly(){
 function toggleTheme(){
   const isLight=document.documentElement.getAttribute('data-theme')==='light';
   const next=isLight?'dark':'light';
-  document.body.style.transition='opacity .3s ease';
-  document.body.style.opacity='0';
-  setTimeout(()=>{
+  const apply=()=>{
     document.documentElement.setAttribute('data-theme',next);
     $('theme-btn').textContent=next==='light'?'🔵':'🌙';
     localStorage.setItem('theme',next);
-    document.body.style.opacity='1';
-    setTimeout(()=>{document.body.style.transition='';},350);
-  },300);
+  };
+  if(document.startViewTransition){document.startViewTransition(apply);}else{apply();}
 }
 
 (function initTheme(){
