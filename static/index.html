@@ -278,8 +278,9 @@
     background:linear-gradient(135deg,#e0f4ff,#00c8ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
   [data-theme="light"] #clock-time{background:linear-gradient(135deg,#00e5ff,#0066ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
   [data-theme="light"] #clock div:last-child{color:rgba(0,200,255,.5)}
-  [data-theme="light"] #tip{background:linear-gradient(135deg,rgba(0,20,55,.97),rgba(0,30,70,.97));border-color:rgba(0,200,255,.2)}
-  [data-theme="light"] #tip-text{color:#e0f4ff}
+  [data-theme="light"] #tip{background:linear-gradient(135deg,rgba(0,20,55,.97),rgba(0,30,70,.97)) !important;border-color:rgba(0,200,255,.25) !important;box-shadow:0 6px 24px rgba(0,200,255,.15) !important}
+  [data-theme="light"] #tip-text{color:#e0f4ff !important}
+  [data-theme="light"] #tip-line{background:linear-gradient(90deg,#00c8ff,#0066ff) !important}
   [data-theme="light"] .toast{background:rgba(0,20,55,.97) !important;color:#e0f4ff;box-shadow:0 8px 32px rgba(0,200,255,.2)}
   [data-theme="light"] .badge-admin{background:rgba(0,200,255,.15);color:#00e5ff}
   [data-theme="light"] .tx-card.owed{background:rgba(255,77,125,.08) !important;border-color:rgba(255,77,125,.25) !important}
@@ -481,10 +482,10 @@
   <div style="font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.3);margin-top:3px">Екатеринбург</div>
 </div>
 
-<div id="tip" style="position:fixed;bottom:32px;right:24px;z-index:100;max-width:320px;background:linear-gradient(135deg,rgba(30,24,60,.97),rgba(20,18,45,.97));border:1px solid rgba(124,111,255,.3);backdrop-filter:blur(20px);border-radius:20px;padding:18px 20px;opacity:0;transform:translateY(12px) scale(.97);transition:opacity .45s,transform .45s;pointer-events:none;box-shadow:0 8px 32px rgba(0,0,0,.4)">
-  <div id="tip-emoji" style="font-size:24px;margin-bottom:8px"></div>
-  <div id="tip-text" style="font-size:15px;font-weight:600;color:#f0f0f8;line-height:1.5"></div>
-  <div style="margin-top:10px;height:2px;border-radius:2px;background:linear-gradient(90deg,#7c6fff,#a855f7);opacity:.5"></div>
+<div id="tip" style="position:fixed;bottom:20px;right:16px;z-index:100;max-width:240px;background:linear-gradient(135deg,rgba(30,24,60,.97),rgba(20,18,45,.97));border:1px solid rgba(124,111,255,.3);backdrop-filter:blur(20px);border-radius:16px;padding:12px 14px;opacity:0;transform:translateY(12px) scale(.97);transition:opacity .45s,transform .45s;pointer-events:none;box-shadow:0 6px 24px rgba(0,0,0,.4)">
+  <div id="tip-emoji" style="font-size:18px;margin-bottom:5px"></div>
+  <div id="tip-text" style="font-size:12px;font-weight:600;color:#f0f0f8;line-height:1.4"></div>
+  <div id="tip-line" style="margin-top:8px;height:2px;border-radius:2px;background:linear-gradient(90deg,#7c6fff,#a855f7);opacity:.5"></div>
 </div>
 
 <script>
