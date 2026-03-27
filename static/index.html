@@ -174,21 +174,69 @@
   .owe-session{font-size:11px;color:var(--muted);margin-top:2px}
   .owe-contact{font-size:11px;color:var(--accent2);margin-top:2px}
   .owe-amt{font-weight:800;font-size:15px;color:var(--danger);flex-shrink:0;margin-left:12px}
-  .toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(10px);background:rgba(30,30,50,.95);border:1px solid var(--glass-border-strong);backdrop-filter:blur(20px);color:#fff;padding:12px 22px;border-radius:100px;font-size:14px;font-weight:600;opacity:0;transition:opacity .25s,transform .25s;pointer-events:none;z-index:999;white-space:nowrap}
+  .toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(10px);background:rgba(30,30,50,.95);border:1px solid var(--glass-border-strong);backdrop-filter:blur(20px);color:var(--text);padding:12px 22px;border-radius:100px;font-size:14px;font-weight:600;opacity:0;transition:opacity .25s,transform .25s;pointer-events:none;z-index:999;white-space:nowrap}
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
   .anim-1{animation-delay:.05s}.anim-2{animation-delay:.1s}.anim-3{animation-delay:.15s}.anim-4{animation-delay:.2s}
-  @media(max-width:600px){.metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.metric-val{font-size:18px}.header h1{font-size:26px}.auth-card{padding:28px 20px}}
+
+  /* neon toast */
+  [data-theme="light"] .toast{background:rgba(0,20,55,.97) !important;border-color:rgba(0,200,255,.3) !important;box-shadow:0 0 20px rgba(0,200,255,.2);color:#e0f4ff !important}
+
+  /* Mobile */
+  @media(max-width:600px){
+    body{font-size:16px}
+    .container{padding:16px 12px 80px}
+    .header h1{font-size:24px}
+    .metrics{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+    .metric{padding:10px 12px}
+    .metric-val{font-size:20px}
+    .metric-label{font-size:10px}
+    .auth-card{padding:24px 16px;border-radius:18px}
+    .auth-logo{font-size:28px}
+    .modal-card{padding:22px 16px;border-radius:16px}
+    .btn{height:38px;padding:0 14px;font-size:13px}
+    .btn-sm{height:30px;padding:0 10px;font-size:11px}
+    .btn-xs{height:24px;padding:0 8px;font-size:10px}
+    .actions{gap:6px}
+    .history-item{padding:12px 14px;gap:10px}
+    .history-icon{width:36px;height:36px;font-size:16px;border-radius:10px}
+    .history-name{font-size:14px}
+    .history-meta{font-size:11px}
+    .history-total{font-size:13px}
+    .card{padding:14px 14px}
+    .tx-card{padding:12px 14px}
+    .tx-amount{font-size:16px}
+    .tx-names .names-line{font-size:14px}
+    .order-item-title{font-size:14px}
+    .order-item-total{font-size:14px}
+    .order-item-actions{flex-wrap:wrap;gap:4px}
+    .nav h2{font-size:18px}
+    .profile-box{padding:10px 12px}
+    .link-box{font-size:11px;padding:10px 12px;word-break:break-all}
+    .admin-user-actions{gap:4px;flex-wrap:wrap}
+    #clock{top:14px;right:14px}
+    #clock-time{font-size:18px}
+    #tip{max-width:240px;right:8px;bottom:16px;padding:12px 14px}
+    #tip-text{font-size:12px}
+    #theme-btn{top:14px;left:14px;width:32px;height:32px;font-size:15px}
+    .toast{font-size:12px;padding:10px 16px;bottom:16px;max-width:88vw;white-space:normal;text-align:center}
+    .item-row{flex-wrap:wrap}
+    .item-row input[data-item="name"]{flex:2}
+    .total-badge{font-size:12px}
+    .tabs{padding:3px}
+    .tab{font-size:12px;height:30px}
+    .payer-extra{padding:10px 12px}
+    .empty{padding:32px 16px}
+    .sec{font-size:10px}
+    #stats-toggle-btn{height:28px;padding:0 10px;font-size:11px}
+    .metrics{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .form-row{flex-wrap:wrap}
+    .participant-block .form-row input[data-field="amount"]{min-width:80px}
+  }
 
   /* ── Theme transition ── */
-  body{transition:background .5s ease}
-  .card,.history-item,.order-item,.admin-user-card,.metric,.tx-card,
-  .profile-box,.payer-extra,.auth-card,.modal-card,.link-box,.tabs,
-  .btn,.profile-edit-btn,#theme-btn,#stats-toggle-btn,
-  input[type=text],input[type=number],input[type=password],input[type=tel],select{
-    transition:background-color .4s ease,border-color .4s ease,color .3s ease,box-shadow .4s ease !important}
-  .sec,.history-name,.admin-user-name,.history-meta,.admin-user-meta,.metric-label,
-  .owe-creditor,.owe-session,.modal-title,.modal-sub,.input-label,.lbl,
-  .auth-sub,.auth-err,.err,.empty{transition:color .3s ease !important}
+  html,body{transition:background .4s ease}
+  *{transition:background-color .35s ease,border-color .35s ease,color .25s ease,box-shadow .35s ease !important}
+  .btn,.history-item,.order-item,.card,.metric,.tx-card,.admin-user-card{transition:background .35s ease,border-color .35s ease,transform .15s ease,box-shadow .35s ease !important}
 
   /* ── Neon blue theme ── */
   [data-theme="light"]{
@@ -399,10 +447,7 @@
     <div class="sec">Участники <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:12px;color:var(--muted)">— первый платил за всех</span></div>
     <div class="card" style="padding:16px 18px">
       <div id="participants-list"></div>
-      <div style="display:flex;gap:8px;margin-top:6px;flex-wrap:wrap">
-        <button class="btn btn-sm" onclick="addParticipantRow()">+ Участник</button>
-        <button class="btn btn-sm" onclick="splitEvenly()" style="color:var(--accent2);border-color:rgba(124,111,255,.3);background:rgba(124,111,255,.08)">⚡ Поделить поровну</button>
-      </div>
+      <button class="btn btn-sm" style="margin-top:6px" onclick="addParticipantRow()">+ Участник</button>
     </div>
     <div id="order-err" class="err" style="display:none"></div>
     <div class="actions" style="margin-top:6px"><button class="btn btn-primary" onclick="saveOrder()">Сохранить</button></div>
@@ -946,26 +991,7 @@ function addParticipantRow(name='',amount='',phone='',bank=''){
   }
   list.appendChild(block);participantCount++;
 }
-function splitEvenly(){
-  const list=$('participants-list');
-  const blocks=list.querySelectorAll('.participant-block');
-  if(blocks.length<2){toast('Добавь хотя бы одного участника кроме плательщика','⚠️');return;}
-  const payerAmtInput=blocks[0].querySelector('[data-field="amount"]');
-  const total=parseFloat(payerAmtInput?.value)||0;
-  if(total<=0){toast('Сначала укажи позиции с суммами','⚠️');return;}
-  // Делим на ВСЕХ включая плательщика
-  const totalPeople=blocks.length;
-  const share=Math.floor((total/totalPeople)*100)/100;
-  const remainder=Math.round((total-share*totalPeople)*100)/100;
-  // Плательщик уже заплатил за всех — каждый должник возвращает свою долю
-  // Плательщик оставляет себе свою долю, остальные должны ему (total - payerShare)
-  const debtors=[...blocks].slice(1);
-  debtors.forEach((b,i)=>{
-    const inp=b.querySelector('[data-field="amount"]');
-    if(inp)inp.value=(i===0?(share+remainder):share).toFixed(2);
-  });
-  toast(`${totalPeople} чел. · каждый по ${fmt(share)}`,'⚡');
-}
+
 function removeRow(btn){
   const list=$('participants-list');if(list.children.length<=1)return;
   const block=btn.closest('.participant-block');
@@ -1106,16 +1132,19 @@ function showTab(tab){
 function toggleTheme(){
   const isLight=document.documentElement.getAttribute('data-theme')==='light';
   const next=isLight?'dark':'light';
-  // Плавный fade через opacity body
-  document.body.style.transition='opacity .3s ease';
-  document.body.style.opacity='0';
-  setTimeout(()=>{
-    document.documentElement.setAttribute('data-theme',next);
-    $('theme-btn').textContent=next==='light'?'🔵':'🌙';
-    localStorage.setItem('theme',next);
-    document.body.style.opacity='1';
-    setTimeout(()=>{document.body.style.transition='';},350);
-  },300);
+  const overlay=document.createElement('div');
+  overlay.style.cssText=`position:fixed;inset:0;z-index:9999;pointer-events:none;background:${next==='light'?'#000d1a':'#0d0f1a'};opacity:0;transition:opacity .35s ease`;
+  document.body.appendChild(overlay);
+  requestAnimationFrame(()=>{
+    overlay.style.opacity='1';
+    setTimeout(()=>{
+      document.documentElement.setAttribute('data-theme',next);
+      $('theme-btn').textContent=next==='light'?'🔵':'🌙';
+      localStorage.setItem('theme',next);
+      overlay.style.opacity='0';
+      setTimeout(()=>overlay.remove(),400);
+    },350);
+  });
 }
 (function initTheme(){
   const saved=localStorage.getItem('theme')||'dark';
