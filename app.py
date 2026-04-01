@@ -11,7 +11,8 @@ app = Flask(__name__, static_folder="static")
 def run_migrations():
     with get_conn() as conn:
         with conn.cursor() as cur:
-            cur.execute("""ALTER TABLE orders ADD COLUMN IF NOT EXISTS items JSONB""")
+            cur.execute("ALTER TABLE orders ADD COLUMN IF NOT EXISTS items JSONB")
+            cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar TEXT")
         conn.commit()
 
 run_migrations()
@@ -84,16 +85,18 @@ def login():
     with get_conn() as conn:
         with conn.cursor() as cur:
             cur.execute("""SELECT id,username,password_hash,COALESCE(display_name,'') as display_name,
-                          COALESCE(phone,'') as phone,COALESCE(bank,'') as bank,is_admin,is_banned
+                          COALESCE(phone,'') as phone,COALESCE(bank,'') as bank,
+                          COALESCE(avatar,'') as avatar,is_admin,is_banned
                           FROM users WHERE username=%s""", (username,))
             u = cur.fetchone()
     if not u or not check_password_hash(u['password_hash'], password):
         return jsonify({"error":"Неверное имя или пароль"}), 401
     if u['is_banned']: return jsonify({"error":"Аккаунт заблокирован"}), 403
     session.update({'user_id':str(u['id']),'username':u['username'],'display_name':u['display_name'],
-                    'phone':u['phone'],'bank':u['bank'],'is_admin':bool(u['is_admin']),'login_time':time.time()})
+                    'phone':u['phone'],'bank':u['bank'],'avatar':u['avatar'],
+                    'is_admin':bool(u['is_admin']),'login_time':time.time()})
     return jsonify({"ok":True,"username":u['username'],"display_name":u['display_name'],
-                    "phone":u['phone'],"bank":u['bank'],"is_admin":bool(u['is_admin'])})
+                    "phone":u['phone'],"bank":u['bank'],"avatar":u['avatar'],"is_admin":bool(u['is_admin'])})
 
 @app.route("/api/auth/logout", methods=["POST"])
 def logout(): session.clear(); return jsonify({"ok":True})
@@ -105,7 +108,8 @@ def me():
     if current_user_id():
         return jsonify({"user_id":current_user_id(),"username":session.get('username'),
                         "display_name":session.get('display_name',''),"phone":session.get('phone',''),
-                        "bank":session.get('bank',''),"is_admin":session.get('is_admin',False)})
+                        "bank":session.get('bank',''),"avatar":session.get('avatar',''),
+                        "is_admin":session.get('is_admin',False)})
     return jsonify({"user_id":None}), 200
 
 @app.route("/api/auth/profile", methods=["PUT"])
@@ -118,12 +122,14 @@ def update_profile():
     dn = d.get("display_name","").strip()
     ph = d.get("phone","").strip()
     bk = d.get("bank","").strip()
+    av = d.get("avatar","").strip()
     with get_conn() as conn:
         with conn.cursor() as cur:
-            cur.execute("UPDATE users SET display_name=%s,phone=%s,bank=%s WHERE id=%s", (dn,ph,bk,current_user_id()))
+            cur.execute("UPDATE users SET display_name=%s,phone=%s,bank=%s,avatar=%s WHERE id=%s",
+                        (dn,ph,bk,av or None,current_user_id()))
         conn.commit()
-    session.update({'display_name':dn,'phone':ph,'bank':bk})
-    return jsonify({"ok":True,"display_name":dn,"phone":ph,"bank":bk})
+    session.update({'display_name':dn,'phone':ph,'bank':bk,'avatar':av})
+    return jsonify({"ok":True,"display_name":dn,"phone":ph,"bank":bk,"avatar":av})
 
 # ── Admin ─────────────────────────────────────────────────────────────────────
 

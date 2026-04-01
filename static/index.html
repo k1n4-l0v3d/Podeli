@@ -87,6 +87,10 @@
   .profile-box{background:rgba(124,111,255,.08);border:1px solid rgba(124,111,255,.2);border-radius:var(--radius-sm);padding:14px 16px;margin-bottom:20px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
   .profile-edit-btn{height:30px;padding:0 12px;font-size:12px;font-weight:600;border:1px solid rgba(124,111,255,.3);border-radius:var(--radius-xs);background:transparent;color:var(--accent2);cursor:pointer;font-family:inherit;transition:background .15s;white-space:nowrap}
   .profile-edit-btn:hover{background:rgba(124,111,255,.15)}
+  .avatar-picker{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-bottom:4px}
+  .avatar-emoji-btn{background:rgba(255,255,255,.05);border:2px solid transparent;border-radius:10px;font-size:22px;line-height:1;padding:6px 0;cursor:pointer;transition:background .15s,border-color .15s;font-family:inherit}
+  .avatar-emoji-btn:hover{background:rgba(124,111,255,.2)}
+  .avatar-emoji-btn.selected{border-color:var(--accent2);background:rgba(124,111,255,.25)}
   .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(8px);z-index:500;display:flex;align-items:center;justify-content:center;padding:20px;animation:fadeIn .2s ease}
   .modal-card{width:100%;max-width:420px;background:rgba(20,18,40,.98);border:1px solid var(--glass-border);border-radius:20px;padding:28px 24px;backdrop-filter:blur(20px);box-shadow:0 20px 60px rgba(0,0,0,.6);animation:cardIn .3s ease both}
   .modal-title{font-size:18px;font-weight:700;margin-bottom:6px}
@@ -287,6 +291,9 @@
   [data-theme="light"] .total-badge{background:rgba(0,200,255,.1);border-color:rgba(0,200,255,.2);color:#00e5ff}
   [data-theme="light"] .profile-edit-btn{border-color:rgba(0,200,255,.3);color:#00e5ff}
   [data-theme="light"] .profile-edit-btn:hover{background:rgba(0,200,255,.12) !important}
+  [data-theme="light"] .avatar-emoji-btn{background:rgba(0,0,0,.05)}
+  [data-theme="light"] .avatar-emoji-btn:hover{background:rgba(0,200,255,.15)}
+  [data-theme="light"] .avatar-emoji-btn.selected{border-color:#00e5ff;background:rgba(0,200,255,.2)}
   [data-theme="light"] #stats-toggle-btn{background:rgba(0,200,255,.1) !important;border-color:rgba(0,200,255,.25) !important;color:#00e5ff !important}
   [data-theme="light"] #theme-btn{border-color:rgba(0,200,255,.2) !important;background:rgba(0,30,70,.5) !important}
   [data-theme="light"] .auth-tab.active{background:linear-gradient(135deg,#0066ff,#00c8ff) !important}
@@ -333,7 +340,34 @@
         <option value="Альфа">Альфа</option>
         <option value="Райффайзен">Райффайзен</option>
       </select>
-      <div style="display:flex;gap:8px">
+      <div class="input-label">Аватар</div>
+      <div class="avatar-picker">
+        <button class="avatar-emoji-btn" data-emoji="🐶" onclick="selectAvatar(this,'🐶')">🐶</button>
+        <button class="avatar-emoji-btn" data-emoji="🐱" onclick="selectAvatar(this,'🐱')">🐱</button>
+        <button class="avatar-emoji-btn" data-emoji="🐭" onclick="selectAvatar(this,'🐭')">🐭</button>
+        <button class="avatar-emoji-btn" data-emoji="🐹" onclick="selectAvatar(this,'🐹')">🐹</button>
+        <button class="avatar-emoji-btn" data-emoji="🐰" onclick="selectAvatar(this,'🐰')">🐰</button>
+        <button class="avatar-emoji-btn" data-emoji="🦊" onclick="selectAvatar(this,'🦊')">🦊</button>
+        <button class="avatar-emoji-btn" data-emoji="🐻" onclick="selectAvatar(this,'🐻')">🐻</button>
+        <button class="avatar-emoji-btn" data-emoji="🐼" onclick="selectAvatar(this,'🐼')">🐼</button>
+        <button class="avatar-emoji-btn" data-emoji="🐨" onclick="selectAvatar(this,'🐨')">🐨</button>
+        <button class="avatar-emoji-btn" data-emoji="🐯" onclick="selectAvatar(this,'🐯')">🐯</button>
+        <button class="avatar-emoji-btn" data-emoji="🦁" onclick="selectAvatar(this,'🦁')">🦁</button>
+        <button class="avatar-emoji-btn" data-emoji="🐸" onclick="selectAvatar(this,'🐸')">🐸</button>
+        <button class="avatar-emoji-btn" data-emoji="🐵" onclick="selectAvatar(this,'🐵')">🐵</button>
+        <button class="avatar-emoji-btn" data-emoji="🦋" onclick="selectAvatar(this,'🦋')">🦋</button>
+        <button class="avatar-emoji-btn" data-emoji="🦄" onclick="selectAvatar(this,'🦄')">🦄</button>
+        <button class="avatar-emoji-btn" data-emoji="🐙" onclick="selectAvatar(this,'🐙')">🐙</button>
+        <button class="avatar-emoji-btn" data-emoji="🌸" onclick="selectAvatar(this,'🌸')">🌸</button>
+        <button class="avatar-emoji-btn" data-emoji="🌈" onclick="selectAvatar(this,'🌈')">🌈</button>
+        <button class="avatar-emoji-btn" data-emoji="⭐" onclick="selectAvatar(this,'⭐')">⭐</button>
+        <button class="avatar-emoji-btn" data-emoji="🔥" onclick="selectAvatar(this,'🔥')">🔥</button>
+        <button class="avatar-emoji-btn" data-emoji="💎" onclick="selectAvatar(this,'💎')">💎</button>
+        <button class="avatar-emoji-btn" data-emoji="🎮" onclick="selectAvatar(this,'🎮')">🎮</button>
+        <button class="avatar-emoji-btn" data-emoji="🎸" onclick="selectAvatar(this,'🎸')">🎸</button>
+        <button class="avatar-emoji-btn" data-emoji="🚀" onclick="selectAvatar(this,'🚀')">🚀</button>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:20px">
         <button class="btn btn-primary" onclick="saveProfile()" style="flex:1;justify-content:center">Сохранить</button>
         <button class="btn" onclick="closeProfileModal()" style="flex:1;justify-content:center">Отмена</button>
       </div>
@@ -493,7 +527,7 @@
 const API='';
 let sessionId=null,sessionData=null,summaryData=null;
 let editOrderId=null,participantCount=0,currentImagePath='';
-let currentUser=null,currentDisplayName='',currentPhone='',currentBank='',isAdmin=false;
+let currentUser=null,currentDisplayName='',currentPhone='',currentBank='',currentAvatar='',isAdmin=false;
 let resetPwUserId=null;
 
 const fmt=n=>parseFloat(n).toLocaleString('ru-RU',{minimumFractionDigits:2,maximumFractionDigits:2})+' ₽';
@@ -582,12 +616,12 @@ async function submitAuth(){
     return;
   }
   currentUser=data.username;currentDisplayName=data.display_name||'';
-  currentPhone=data.phone||'';currentBank=data.bank||'';isAdmin=data.is_admin||false;
+  currentPhone=data.phone||'';currentBank=data.bank||'';currentAvatar=data.avatar||'';isAdmin=data.is_admin||false;
   toast(`Привет, ${currentUser}!`,'👋');await initApp();
 }
 async function logout(){
   await fetch('/api/auth/logout',{method:'POST'});
-  currentUser=null;currentDisplayName='';currentPhone='';currentBank='';isAdmin=false;
+  currentUser=null;currentDisplayName='';currentPhone='';currentBank='';currentAvatar='';isAdmin=false;
   sessionId=null;sessionData=null;history.pushState({},'',location.pathname);showPage('p-auth');
 }
 
@@ -600,7 +634,7 @@ function renderProfileBox(){
   wrap.innerHTML=`<div class="profile-box">
     <div style="flex:1;min-width:0">
       <div style="font-size:13px;font-weight:600;color:var(--accent2);display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-        👤 ${esc(currentUser)}
+        <span style="font-size:20px;line-height:1">${currentAvatar||'👤'}</span> ${esc(currentUser)}
         ${isAdmin?'<span class="badge badge-admin">ADMIN</span>':''}
         <button onclick="logout()" style="background:none;border:none;color:rgba(255,255,255,.3);cursor:pointer;font-size:12px;font-family:inherit">Выйти</button>
       </div>
@@ -617,19 +651,26 @@ function openProfileModal(){
   $('profile-display-name').value=currentDisplayName;
   $('profile-phone').value=currentPhone||'';
   $('profile-bank').value=currentBank||'';
+  document.querySelectorAll('.avatar-emoji-btn').forEach(b=>{
+    b.classList.toggle('selected',b.dataset.emoji===currentAvatar);
+  });
   $('modal-profile').style.display='block';
   setTimeout(()=>$('profile-display-name').focus(),100);
 }
 function closeProfileModal(){$('modal-profile').style.display='none';}
+function selectAvatar(btn,emoji){
+  document.querySelectorAll('.avatar-emoji-btn').forEach(b=>b.classList.remove('selected'));
+  if(currentAvatar===emoji){currentAvatar='';} else {currentAvatar=emoji;btn.classList.add('selected');}
+}
 async function saveProfile(){
   const name=$('profile-display-name').value.trim();
   const phone=$('profile-phone').value.trim();
   const bank=$('profile-bank').value;
   const res=await fetch('/api/auth/profile',{method:'PUT',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({display_name:name,phone,bank})});
+    body:JSON.stringify({display_name:name,phone,bank,avatar:currentAvatar})});
   const data=await res.json();
   if(data.ok){
-    currentDisplayName=data.display_name;currentPhone=data.phone||'';currentBank=data.bank||'';
+    currentDisplayName=data.display_name;currentPhone=data.phone||'';currentBank=data.bank||'';currentAvatar=data.avatar||'';
     renderProfileBox();$('modal-profile').style.display='none';toast('Профиль сохранён','✅');loadStats();
   }
 }
@@ -710,7 +751,7 @@ window.addEventListener('load',async()=>{
   const res=await fetch('/api/auth/me');const data=await res.json();
   if(data.user_id){
     currentUser=data.username;currentDisplayName=data.display_name||'';
-    currentPhone=data.phone||'';currentBank=data.bank||'';isAdmin=data.is_admin||false;
+    currentPhone=data.phone||'';currentBank=data.bank||'';currentAvatar=data.avatar||'';isAdmin=data.is_admin||false;
     await initApp();
   }else showPage('p-auth');
 });
@@ -1107,7 +1148,8 @@ async function loadSummary(){
     const hasDebts=theirDebts.length>0;
     let amtClass='amt-payer';if(!isPayer&&hasDebts)amtClass=allSettled?'amt-settled':'amt-debtor';
     const div=document.createElement('div');div.className=`person-row anim-${Math.min(i+1,4)}`;
-    div.innerHTML=`<div><span style="font-weight:600">${esc(p.name)}</span>
+    const pAvatar=(currentDisplayName&&p.name===currentDisplayName&&currentAvatar)?`<span style="font-size:16px;margin-right:4px">${currentAvatar}</span>`:'';
+    div.innerHTML=`<div>${pAvatar}<span style="font-weight:600">${esc(p.name)}</span>
       ${isPayer?'<span class="badge badge-muted" style="margin-left:8px">платил</span>':''}
       ${allSettled?'<span class="badge" style="margin-left:8px;background:rgba(74,222,128,.15);color:var(--success)">вернул</span>':''}
     </div><span class="${amtClass}">${fmt(p.amount)}</span>`;
