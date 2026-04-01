@@ -343,9 +343,7 @@
         <option value="Альфа">Альфа</option>
         <option value="Райффайзен">Райффайзен</option>
       </select>
-      <div class="input-label" style="margin-top:14px">Email для двухфакторной авторизации <span style="color:var(--muted);font-weight:400">(необязательно)</span></div>
-      <input type="email" id="profile-email" placeholder="example@gmail.com" style="margin-bottom:20px"/>
-      <div class="input-label">Аватар</div>
+      <div class="input-label" style="margin-top:14px">Аватар</div>
       <div class="avatar-picker">
         <button class="avatar-emoji-btn" data-emoji="🐶" onclick="selectAvatar(this,'🐶')">🐶</button>
         <button class="avatar-emoji-btn" data-emoji="🐱" onclick="selectAvatar(this,'🐱')">🐱</button>
@@ -606,13 +604,30 @@ function formatPhone(input){
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
 let authMode='login';
-let captchaAnswer=0;
+let captchaAnswer=0,captchaFails=0,captchaLockedUntil=0,captchaTimer=null;
+const CAPTCHA_MAX_FAILS=3,CAPTCHA_LOCK_SEC=60;
 function genCaptcha(){
   const a=Math.floor(Math.random()*10)+1;
   const b=Math.floor(Math.random()*10)+1;
   captchaAnswer=a+b;
   $('auth-captcha-label').textContent=`Сколько будет ${a} + ${b}?`;
   $('auth-captcha').value='';
+}
+function startCaptchaLock(){
+  captchaLockedUntil=Date.now()+CAPTCHA_LOCK_SEC*1000;
+  $('auth-captcha').disabled=true;
+  if(captchaTimer) clearInterval(captchaTimer);
+  captchaTimer=setInterval(()=>{
+    const rem=Math.ceil((captchaLockedUntil-Date.now())/1000);
+    if(rem<=0){
+      clearInterval(captchaTimer);captchaTimer=null;
+      captchaFails=0;captchaLockedUntil=0;
+      $('auth-captcha').disabled=false;
+      genCaptcha();$('auth-err').style.display='none';
+    } else {
+      $('auth-captcha-label').textContent=`Подожди ${rem} сек. перед следующей попыткой`;
+    }
+  },1000);
 }
 function switchAuthTab(mode){
   authMode=mode;
@@ -622,19 +637,31 @@ function switchAuthTab(mode){
   $('auth-err').style.display='none';
   const showCaptcha=mode==='register';
   $('auth-captcha-field').style.display=showCaptcha?'block':'none';
-  if(showCaptcha) genCaptcha();
+  if(showCaptcha){captchaFails=0;captchaLockedUntil=0;if(captchaTimer){clearInterval(captchaTimer);captchaTimer=null;}$('auth-captcha').disabled=false;genCaptcha();}
 }
 async function submitAuth(){
   const username=$('auth-username').value.trim();
   const password=$('auth-password').value.trim();
   const errEl=$('auth-err');errEl.style.display='none';
   if(authMode==='register'){
+    if(captchaLockedUntil>Date.now()){
+      errEl.textContent='Слишком много попыток, подожди';errEl.style.display='block';return;
+    }
     const ans=parseInt($('auth-captcha').value.trim(),10);
     if(isNaN(ans)||ans!==captchaAnswer){
-      errEl.textContent='Неверный ответ на капчу';errEl.style.display='block';
+      captchaFails++;
+      if(captchaFails>=CAPTCHA_MAX_FAILS){
+        errEl.textContent=`Слишком много неверных ответов. Подожди ${CAPTCHA_LOCK_SEC} сек.`;
+        errEl.style.display='block';
+        errEl.style.animation='none';requestAnimationFrame(()=>{errEl.style.animation='shake .3s ease';});
+        startCaptchaLock();return;
+      }
+      errEl.textContent=`Неверный ответ. Осталось попыток: ${CAPTCHA_MAX_FAILS-captchaFails}`;
+      errEl.style.display='block';
       errEl.style.animation='none';requestAnimationFrame(()=>{errEl.style.animation='shake .3s ease';});
       genCaptcha();return;
     }
+    captchaFails=0;
   }
   const btn=$('auth-btn-text');const prevText=btn.textContent;
   btn.textContent=authMode==='login'?'⏳ Входим...':'⏳ Регистрируем...';
@@ -692,7 +719,6 @@ function openProfileModal(){
   $('profile-display-name').value=currentDisplayName;
   $('profile-phone').value=currentPhone||'';
   $('profile-bank').value=currentBank||'';
-  $('profile-email').value=currentEmail||'';
   document.querySelectorAll('.avatar-emoji-btn').forEach(b=>{
     b.classList.toggle('selected',b.dataset.emoji===currentAvatar);
   });
@@ -708,9 +734,8 @@ async function saveProfile(){
   const name=$('profile-display-name').value.trim();
   const phone=$('profile-phone').value.trim();
   const bank=$('profile-bank').value;
-  const email=$('profile-email').value.trim().toLowerCase();
   const res=await fetch('/api/auth/profile',{method:'PUT',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({display_name:name,phone,bank,avatar:currentAvatar,email})});
+    body:JSON.stringify({display_name:name,phone,bank,avatar:currentAvatar})});
   const data=await res.json();
   if(data.ok){
     currentDisplayName=data.display_name;currentPhone=data.phone||'';currentBank=data.bank||'';
