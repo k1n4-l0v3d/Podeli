@@ -28,6 +28,16 @@ def send_2fa_email(to_email, code):
         s.login(smtp_user, smtp_pass)
         s.sendmail(smtp_user, [to_email], msg.as_string())
 
+@app.route("/api/test-email")
+def test_email():
+    to = request.args.get("to","")
+    if not to: return jsonify({"error":"?to=email не указан"}), 400
+    try:
+        send_2fa_email(to, "123456")
+        return jsonify({"ok": True, "sent_to": to})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 def run_migrations():
     with get_conn() as conn:
         with conn.cursor() as cur:
