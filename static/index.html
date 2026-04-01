@@ -528,6 +528,11 @@ const API='';
 let sessionId=null,sessionData=null,summaryData=null;
 let editOrderId=null,participantCount=0,currentImagePath='';
 let currentUser=null,currentDisplayName='',currentPhone='',currentBank='',currentAvatar='',isAdmin=false;
+let userAvatars={};
+function getAvatar(name){if(!name)return '';const k=Object.keys(userAvatars).find(n=>n.toLowerCase()===name.toLowerCase());return k?userAvatars[k]:'';}
+async function loadUserAvatars(){try{const r=await fetch('/api/users/avatars');userAvatars=await r.json();}catch{userAvatars={};}}
+function avatarSpan(name,size=18){const a=getAvatar(name);return a?`<span style="font-size:${size}px;line-height:1;flex-shrink:0">${a}</span>`:'';}
+
 let resetPwUserId=null;
 
 const fmt=n=>parseFloat(n).toLocaleString('ru-RU',{minimumFractionDigits:2,maximumFractionDigits:2})+' ₽';
@@ -671,7 +676,7 @@ async function saveProfile(){
   const data=await res.json();
   if(data.ok){
     currentDisplayName=data.display_name;currentPhone=data.phone||'';currentBank=data.bank||'';currentAvatar=data.avatar||'';
-    renderProfileBox();$('modal-profile').style.display='none';toast('Профиль сохранён','✅');loadStats();
+    renderProfileBox();$('modal-profile').style.display='none';toast('Профиль сохранён','✅');await loadUserAvatars();loadStats();
   }
 }
 
@@ -757,6 +762,7 @@ window.addEventListener('load',async()=>{
 });
 async function initApp(){
   renderProfileBox();
+  await loadUserAvatars();
   const sid=new URLSearchParams(location.search).get('s');
   if(sid){sessionId=sid;loadSession();}
   else{await loadHistory();showPage('p-start');}
@@ -823,14 +829,14 @@ async function loadStats(){
       <div class="card" style="padding:16px 18px">
         <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#a78bfa;margin-bottom:12px">🏆 Чаще всех платил</div>
         ${s.top_payers.map((p,i)=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.06);font-size:13px">
-          <div style="display:flex;align-items:center;gap:8px"><span style="font-size:11px;font-weight:700;color:rgba(255,255,255,.3);min-width:16px">${i+1}</span><span style="font-weight:600">${esc(p.name)}</span></div>
+          <div style="display:flex;align-items:center;gap:8px"><span style="font-size:11px;font-weight:700;color:rgba(255,255,255,.3);min-width:16px">${i+1}</span>${avatarSpan(p.name,16)}<span style="font-weight:600">${esc(p.name)}</span></div>
           <div style="text-align:right"><div style="font-weight:700;font-size:13px;background:linear-gradient(135deg,#fff,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent">${fmt(p.paid_total)}</div>
           <div style="font-size:11px;color:rgba(255,255,255,.35)">${p.times} раз${p.times>1?'а':''}</div></div></div>`).join('')}
       </div>
       <div class="card" style="padding:16px 18px">
         <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#ff6b6b;margin-bottom:12px">💸 Больше всех должен</div>
         ${s.top_debtors.map((p,i)=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.06);font-size:13px">
-          <div style="display:flex;align-items:center;gap:8px"><span style="font-size:11px;font-weight:700;color:rgba(255,255,255,.3);min-width:16px">${i+1}</span><span style="font-weight:600">${esc(p.name)}</span></div>
+          <div style="display:flex;align-items:center;gap:8px"><span style="font-size:11px;font-weight:700;color:rgba(255,255,255,.3);min-width:16px">${i+1}</span>${avatarSpan(p.name,16)}<span style="font-weight:600">${esc(p.name)}</span></div>
           <div style="text-align:right"><div style="font-weight:700;font-size:13px;color:#ff6b6b">${fmt(p.owed_total)}</div>
           <div style="font-size:11px;color:rgba(255,255,255,.35)">${p.times} заказ${p.times===1?'':p.times<5?'а':'ов'}</div></div></div>`).join('')}
       </div>
@@ -1003,6 +1009,7 @@ function addParticipantRow(name='',amount='',phone='',bank=''){
   if(isFirst){
     block.innerHTML=`
       <div class="form-row">
+        ${avatarSpan(name,20)}
         <input type="text" placeholder="Имя (платил)" value="${esc(String(name))}" style="flex:2" data-field="name"/>
         <input type="number" placeholder="Сумма" value="${amount||''}" min="0" step="0.01" style="flex:1;min-width:90px" data-field="amount" readonly/>
         <span class="lbl">₽</span><div style="width:34px;flex-shrink:0"></div>
@@ -1026,6 +1033,7 @@ function addParticipantRow(name='',amount='',phone='',bank=''){
   }else{
     block.innerHTML=`
       <div class="form-row" style="margin-bottom:0">
+        ${avatarSpan(name,20)}
         <input type="text" placeholder="Имя" value="${esc(String(name))}" style="flex:2" data-field="name"/>
         <input type="number" placeholder="Сумма" value="${amount||''}" min="0" step="0.01" style="flex:1;min-width:90px" data-field="amount" oninput="clampDebtor(this)"/>
         <span class="lbl">₽</span>

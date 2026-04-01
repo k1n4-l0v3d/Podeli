@@ -131,6 +131,14 @@ def update_profile():
     session.update({'display_name':dn,'phone':ph,'bank':bk,'avatar':av})
     return jsonify({"ok":True,"display_name":dn,"phone":ph,"bank":bk,"avatar":av})
 
+@app.route("/api/users/avatars")
+def users_avatars():
+    with get_conn() as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT COALESCE(display_name,'') as name, avatar FROM users WHERE avatar IS NOT NULL AND avatar != '' AND display_name IS NOT NULL AND display_name != ''")
+            rows = cur.fetchall()
+    return jsonify({r['name']: r['avatar'] for r in rows})
+
 # ── Admin ─────────────────────────────────────────────────────────────────────
 
 @app.route("/api/admin/users")
