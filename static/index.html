@@ -321,6 +321,25 @@
   </div>
 </div>
 
+<!-- 2FA -->
+<div id="p-2fa" class="page">
+  <div class="auth-wrap">
+    <div class="auth-card">
+      <div class="auth-logo" style="font-size:32px">✉️</div>
+      <div class="auth-sub" style="margin-bottom:4px;font-size:15px;font-weight:600;color:var(--text)">Проверь почту</div>
+      <div id="tfa-hint" class="auth-sub" style="margin-bottom:20px"></div>
+      <div id="tfa-err" class="auth-err" style="display:none"></div>
+      <div class="auth-field"><div class="input-label">Код из письма</div>
+        <input type="text" id="tfa-code" placeholder="6 цифр" maxlength="6" inputmode="numeric"
+               autocomplete="one-time-code" style="letter-spacing:0.2em;font-size:22px;text-align:center"
+               oninput="this.value=this.value.replace(/\D/g,'')"
+               onkeydown="if(event.key==='Enter')submit2fa()"/></div>
+      <button class="btn btn-primary btn-full" onclick="submit2fa()" style="margin-top:8px">Подтвердить</button>
+      <button class="btn btn-full" onclick="showPage('p-auth')" style="margin-top:8px;justify-content:center">← Назад</button>
+    </div>
+  </div>
+</div>
+
 <!-- Profile modal -->
 <div id="modal-profile" style="display:none">
   <div class="modal-overlay" onclick="if(event.target===this)closeProfileModal()">
@@ -340,6 +359,8 @@
         <option value="Альфа">Альфа</option>
         <option value="Райффайзен">Райффайзен</option>
       </select>
+      <div class="input-label" style="margin-top:14px">Email для двухфакторной авторизации <span style="color:var(--muted);font-weight:400">(необязательно)</span></div>
+      <input type="email" id="profile-email" placeholder="example@gmail.com" style="margin-bottom:20px"/>
       <div class="input-label">Аватар</div>
       <div class="avatar-picker">
         <button class="avatar-emoji-btn" data-emoji="🐶" onclick="selectAvatar(this,'🐶')">🐶</button>
@@ -527,7 +548,8 @@
 const API='';
 let sessionId=null,sessionData=null,summaryData=null;
 let editOrderId=null,participantCount=0,currentImagePath='';
-let currentUser=null,currentDisplayName='',currentPhone='',currentBank='',currentAvatar='',isAdmin=false;
+let currentUser=null,currentDisplayName='',currentPhone='',currentBank='',currentAvatar='',currentEmail='',isAdmin=false;
+let pending2faUid=null;
 let userAvatars={};
 function getAvatar(name){if(!name)return '';const k=Object.keys(userAvatars).find(n=>n.toLowerCase()===name.toLowerCase());return k?userAvatars[k]:'';}
 async function loadUserAvatars(){try{const r=await fetch('/api/users/avatars');userAvatars=await r.json();}catch{userAvatars={};}}
@@ -620,13 +642,37 @@ async function submitAuth(){
     errEl.style.animation='none';requestAnimationFrame(()=>{errEl.style.animation='shake .3s ease';});
     return;
   }
+  if(data.needs_2fa){
+    pending2faUid=data.uid;
+    $('tfa-hint').textContent='Отправили код на почту, привязанную к аккаунту';
+    $('tfa-code').value='';$('tfa-err').style.display='none';
+    showPage('p-2fa');setTimeout(()=>$('tfa-code').focus(),200);
+    return;
+  }
+  applyUserData(data);toast(`Привет, ${currentUser}!`,'👋');await initApp();
+}
+async function submit2fa(){
+  const code=$('tfa-code').value.trim();
+  const errEl=$('tfa-err');errEl.style.display='none';
+  if(code.length!==6){errEl.textContent='Введи 6 цифр';errEl.style.display='block';return;}
+  const res=await fetch('/api/auth/verify-2fa',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({uid:pending2faUid,code})});
+  const data=await res.json();
+  if(!res.ok){
+    errEl.textContent=data.error||'Ошибка';errEl.style.display='block';
+    errEl.style.animation='none';requestAnimationFrame(()=>{errEl.style.animation='shake .3s ease';});
+    return;
+  }
+  pending2faUid=null;applyUserData(data);toast(`Привет, ${currentUser}!`,'👋');await initApp();
+}
+function applyUserData(data){
   currentUser=data.username;currentDisplayName=data.display_name||'';
-  currentPhone=data.phone||'';currentBank=data.bank||'';currentAvatar=data.avatar||'';isAdmin=data.is_admin||false;
-  toast(`Привет, ${currentUser}!`,'👋');await initApp();
+  currentPhone=data.phone||'';currentBank=data.bank||'';currentAvatar=data.avatar||'';
+  currentEmail=data.email||'';isAdmin=data.is_admin||false;
 }
 async function logout(){
   await fetch('/api/auth/logout',{method:'POST'});
-  currentUser=null;currentDisplayName='';currentPhone='';currentBank='';currentAvatar='';isAdmin=false;
+  currentUser=null;currentDisplayName='';currentPhone='';currentBank='';currentAvatar='';currentEmail='';isAdmin=false;
   sessionId=null;sessionData=null;history.pushState({},'',location.pathname);showPage('p-auth');
 }
 
@@ -656,6 +702,7 @@ function openProfileModal(){
   $('profile-display-name').value=currentDisplayName;
   $('profile-phone').value=currentPhone||'';
   $('profile-bank').value=currentBank||'';
+  $('profile-email').value=currentEmail||'';
   document.querySelectorAll('.avatar-emoji-btn').forEach(b=>{
     b.classList.toggle('selected',b.dataset.emoji===currentAvatar);
   });
@@ -671,11 +718,13 @@ async function saveProfile(){
   const name=$('profile-display-name').value.trim();
   const phone=$('profile-phone').value.trim();
   const bank=$('profile-bank').value;
+  const email=$('profile-email').value.trim().toLowerCase();
   const res=await fetch('/api/auth/profile',{method:'PUT',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({display_name:name,phone,bank,avatar:currentAvatar})});
+    body:JSON.stringify({display_name:name,phone,bank,avatar:currentAvatar,email})});
   const data=await res.json();
   if(data.ok){
-    currentDisplayName=data.display_name;currentPhone=data.phone||'';currentBank=data.bank||'';currentAvatar=data.avatar||'';
+    currentDisplayName=data.display_name;currentPhone=data.phone||'';currentBank=data.bank||'';
+    currentAvatar=data.avatar||'';currentEmail=data.email||'';
     renderProfileBox();$('modal-profile').style.display='none';toast('Профиль сохранён','✅');await loadUserAvatars();loadStats();
   }
 }
@@ -755,9 +804,7 @@ async function kickUser(userId,username){
 window.addEventListener('load',async()=>{
   const res=await fetch('/api/auth/me');const data=await res.json();
   if(data.user_id){
-    currentUser=data.username;currentDisplayName=data.display_name||'';
-    currentPhone=data.phone||'';currentBank=data.bank||'';currentAvatar=data.avatar||'';isAdmin=data.is_admin||false;
-    await initApp();
+    applyUserData(data);await initApp();
   }else showPage('p-auth');
 });
 async function initApp(){

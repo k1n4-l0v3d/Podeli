@@ -2,11 +2,31 @@ from flask import Flask, request, jsonify, send_from_directory, session
 from dotenv import load_dotenv
 from db import get_conn
 from werkzeug.security import generate_password_hash, check_password_hash
-import os, uuid, time, json as _json
+import os, uuid, time, json as _json, random, smtplib
+from email.mime.text import MIMEText
+from datetime import datetime, timedelta
 
 load_dotenv()
 
 app = Flask(__name__, static_folder="static")
+
+def send_2fa_email(to_email, code):
+    smtp_user = os.getenv("GMAIL_USER")
+    smtp_pass = os.getenv("GMAIL_APP_PASSWORD")
+    smtp_host = os.getenv("SMTP_HOST", "smtp.yandex.ru")
+    smtp_port = int(os.getenv("SMTP_PORT", "465"))
+    msg = MIMEText(
+        f"Ваш код подтверждения для входа в Подели:\n\n"
+        f"  {code}\n\n"
+        f"Код действителен 5 минут.\n"
+        f"Если это были не вы — просто проигнорируйте письмо."
+    )
+    msg["Subject"] = f"Код входа: {code} — Подели"
+    msg["From"] = smtp_user
+    msg["To"] = to_email
+    with smtplib.SMTP_SSL(smtp_host, smtp_port) as s:
+        s.login(smtp_user, smtp_pass)
+        s.sendmail(smtp_user, [to_email], msg.as_string())
 
 def run_migrations():
     with get_conn() as conn:
@@ -86,12 +106,26 @@ def login():
         with conn.cursor() as cur:
             cur.execute("""SELECT id,username,password_hash,COALESCE(display_name,'') as display_name,
                           COALESCE(phone,'') as phone,COALESCE(bank,'') as bank,
-                          COALESCE(avatar,'') as avatar,is_admin,is_banned
+                          COALESCE(avatar,'') as avatar,COALESCE(email,'') as email,
+                          is_admin,is_banned
                           FROM users WHERE username=%s""", (username,))
             u = cur.fetchone()
     if not u or not check_password_hash(u['password_hash'], password):
         return jsonify({"error":"Неверное имя или пароль"}), 401
     if u['is_banned']: return jsonify({"error":"Аккаунт заблокирован"}), 403
+    if u['email']:
+        code = str(random.randint(100000, 999999))
+        expires = datetime.now() + timedelta(minutes=5)
+        with get_conn() as conn:
+            with conn.cursor() as cur:
+                cur.execute("UPDATE users SET verify_code=%s, verify_code_expires=%s WHERE id=%s",
+                            (code, expires, str(u['id'])))
+            conn.commit()
+        try:
+            send_2fa_email(u['email'], code)
+        except Exception as e:
+            return jsonify({"error": f"Не удалось отправить письмо: {e}"}), 500
+        return jsonify({"needs_2fa": True, "uid": str(u['id'])})
     session.update({'user_id':str(u['id']),'username':u['username'],'display_name':u['display_name'],
                     'phone':u['phone'],'bank':u['bank'],'avatar':u['avatar'],
                     'is_admin':bool(u['is_admin']),'login_time':time.time()})
@@ -101,6 +135,35 @@ def login():
 @app.route("/api/auth/logout", methods=["POST"])
 def logout(): session.clear(); return jsonify({"ok":True})
 
+@app.route("/api/auth/verify-2fa", methods=["POST"])
+def verify_2fa():
+    d = request.json
+    uid = d.get("uid","").strip()
+    code = d.get("code","").strip()
+    if not uid or not code: return jsonify({"error":"Неверные данные"}), 400
+    with get_conn() as conn:
+        with conn.cursor() as cur:
+            cur.execute("""SELECT id,username,COALESCE(display_name,'') as display_name,
+                          COALESCE(phone,'') as phone,COALESCE(bank,'') as bank,
+                          COALESCE(avatar,'') as avatar,is_admin,
+                          verify_code,verify_code_expires
+                          FROM users WHERE id=%s""", (uid,))
+            u = cur.fetchone()
+    if not u: return jsonify({"error":"Пользователь не найден"}), 404
+    if not u['verify_code'] or u['verify_code'] != code:
+        return jsonify({"error":"Неверный код"}), 401
+    if not u['verify_code_expires'] or datetime.now() > u['verify_code_expires']:
+        return jsonify({"error":"Код истёк, войди снова"}), 401
+    with get_conn() as conn:
+        with conn.cursor() as cur:
+            cur.execute("UPDATE users SET verify_code='', verify_code_expires=NULL WHERE id=%s", (uid,))
+        conn.commit()
+    session.update({'user_id':str(u['id']),'username':u['username'],'display_name':u['display_name'],
+                    'phone':u['phone'],'bank':u['bank'],'avatar':u['avatar'],
+                    'is_admin':bool(u['is_admin']),'login_time':time.time()})
+    return jsonify({"ok":True,"username":u['username'],"display_name":u['display_name'],
+                    "phone":u['phone'],"bank":u['bank'],"avatar":u['avatar'],"is_admin":bool(u['is_admin'])})
+
 @app.route("/api/auth/me")
 def me():
     k = check_not_kicked()
@@ -109,7 +172,7 @@ def me():
         return jsonify({"user_id":current_user_id(),"username":session.get('username'),
                         "display_name":session.get('display_name',''),"phone":session.get('phone',''),
                         "bank":session.get('bank',''),"avatar":session.get('avatar',''),
-                        "is_admin":session.get('is_admin',False)})
+                        "email":session.get('email',''),"is_admin":session.get('is_admin',False)})
     return jsonify({"user_id":None}), 200
 
 @app.route("/api/auth/profile", methods=["PUT"])
@@ -123,13 +186,14 @@ def update_profile():
     ph = d.get("phone","").strip()
     bk = d.get("bank","").strip()
     av = d.get("avatar","").strip()
+    em = d.get("email","").strip().lower()
     with get_conn() as conn:
         with conn.cursor() as cur:
-            cur.execute("UPDATE users SET display_name=%s,phone=%s,bank=%s,avatar=%s WHERE id=%s",
-                        (dn,ph,bk,av or None,current_user_id()))
+            cur.execute("UPDATE users SET display_name=%s,phone=%s,bank=%s,avatar=%s,email=%s WHERE id=%s",
+                        (dn,ph,bk,av or None,em or None,current_user_id()))
         conn.commit()
-    session.update({'display_name':dn,'phone':ph,'bank':bk,'avatar':av})
-    return jsonify({"ok":True,"display_name":dn,"phone":ph,"bank":bk,"avatar":av})
+    session.update({'display_name':dn,'phone':ph,'bank':bk,'avatar':av,'email':em})
+    return jsonify({"ok":True,"display_name":dn,"phone":ph,"bank":bk,"avatar":av,"email":em})
 
 @app.route("/api/users/avatars")
 def users_avatars():
