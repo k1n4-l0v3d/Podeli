@@ -634,9 +634,17 @@ async function submitAuth(){
   const username=$('auth-username').value.trim();
   const password=$('auth-password').value.trim();
   const errEl=$('auth-err');errEl.style.display='none';
-  const res=await fetch(authMode==='login'?'/api/auth/login':'/api/auth/register',{
-    method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username,password})});
-  const data=await res.json();
+  const btn=$('auth-btn-text');const prevText=btn.textContent;
+  btn.textContent='⏳ Входим...';
+  let res,data;
+  try{
+    res=await fetch(authMode==='login'?'/api/auth/login':'/api/auth/register',{
+      method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username,password})});
+    data=await res.json();
+  }catch{
+    errEl.textContent='Ошибка сети';errEl.style.display='block';btn.textContent=prevText;return;
+  }
+  btn.textContent=prevText;
   if(!res.ok){
     errEl.textContent=data.error||'Ошибка';errEl.style.display='block';
     errEl.style.animation='none';requestAnimationFrame(()=>{errEl.style.animation='shake .3s ease';});

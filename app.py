@@ -24,7 +24,7 @@ def send_2fa_email(to_email, code):
     msg["Subject"] = f"Код входа: {code} — Подели"
     msg["From"] = smtp_user
     msg["To"] = to_email
-    with smtplib.SMTP_SSL(smtp_host, smtp_port) as s:
+    with smtplib.SMTP_SSL(smtp_host, smtp_port, timeout=10) as s:
         s.login(smtp_user, smtp_pass)
         s.sendmail(smtp_user, [to_email], msg.as_string())
 
