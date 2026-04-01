@@ -316,28 +316,10 @@
         <input type="text" id="auth-username" placeholder="Введи имя" autocomplete="username"/></div>
       <div class="auth-field"><div class="input-label">Пароль</div>
         <input type="password" id="auth-password" placeholder="Введи пароль" autocomplete="current-password" onkeydown="if(event.key==='Enter')submitAuth()"/></div>
-      <div class="auth-field" id="auth-email-field" style="display:none"><div class="input-label">Email для подтверждения</div>
-        <input type="text" id="auth-email" placeholder="example@mail.ru" autocomplete="email" onkeydown="if(event.key==='Enter')submitAuth()"/></div>
+      <div class="auth-field" id="auth-captcha-field" style="display:none">
+        <div class="input-label" id="auth-captcha-label"></div>
+        <input type="text" id="auth-captcha" placeholder="Ответ" inputmode="numeric" maxlength="3" onkeydown="if(event.key==='Enter')submitAuth()"/></div>
       <button class="btn btn-primary btn-full" onclick="submitAuth()" style="margin-top:8px"><span id="auth-btn-text">Войти</span></button>
-    </div>
-  </div>
-</div>
-
-<!-- Email verify -->
-<div id="p-2fa" class="page">
-  <div class="auth-wrap">
-    <div class="auth-card">
-      <div class="auth-logo" style="font-size:32px">✉️</div>
-      <div class="auth-sub" style="margin-bottom:4px;font-size:15px;font-weight:600;color:var(--text)">Подтверди email</div>
-      <div id="tfa-hint" class="auth-sub" style="margin-bottom:20px"></div>
-      <div id="tfa-err" class="auth-err" style="display:none"></div>
-      <div class="auth-field"><div class="input-label">Код из письма</div>
-        <input type="text" id="tfa-code" placeholder="6 цифр" maxlength="6" inputmode="numeric"
-               autocomplete="one-time-code" style="letter-spacing:0.2em;font-size:22px;text-align:center"
-               oninput="this.value=this.value.replace(/\D/g,'')"
-               onkeydown="if(event.key==='Enter')submit2fa()"/></div>
-      <button class="btn btn-primary btn-full" onclick="submit2fa()" style="margin-top:8px">Подтвердить</button>
-      <button class="btn btn-full" onclick="showPage('p-auth')" style="margin-top:8px;justify-content:center">← Назад</button>
     </div>
   </div>
 </div>
@@ -551,7 +533,6 @@ const API='';
 let sessionId=null,sessionData=null,summaryData=null;
 let editOrderId=null,participantCount=0,currentImagePath='';
 let currentUser=null,currentDisplayName='',currentPhone='',currentBank='',currentAvatar='',currentEmail='',isAdmin=false;
-let pending2faUid=null;
 let userAvatars={};
 function getAvatar(name){if(!name)return '';const k=Object.keys(userAvatars).find(n=>n.toLowerCase()===name.toLowerCase());return k?userAvatars[k]:'';}
 async function loadUserAvatars(){try{const r=await fetch('/api/users/avatars');userAvatars=await r.json();}catch{userAvatars={};}}
@@ -625,26 +606,42 @@ function formatPhone(input){
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
 let authMode='login';
+let captchaAnswer=0;
+function genCaptcha(){
+  const a=Math.floor(Math.random()*10)+1;
+  const b=Math.floor(Math.random()*10)+1;
+  captchaAnswer=a+b;
+  $('auth-captcha-label').textContent=`Сколько будет ${a} + ${b}?`;
+  $('auth-captcha').value='';
+}
 function switchAuthTab(mode){
   authMode=mode;
   $('tab-login').classList.toggle('active',mode==='login');
   $('tab-register').classList.toggle('active',mode==='register');
   $('auth-btn-text').textContent=mode==='login'?'Войти':'Зарегистрироваться';
   $('auth-err').style.display='none';
-  $('auth-email-field').style.display=mode==='register'?'block':'none';
+  const showCaptcha=mode==='register';
+  $('auth-captcha-field').style.display=showCaptcha?'block':'none';
+  if(showCaptcha) genCaptcha();
 }
 async function submitAuth(){
   const username=$('auth-username').value.trim();
   const password=$('auth-password').value.trim();
-  const email=authMode==='register'?$('auth-email').value.trim():'';
   const errEl=$('auth-err');errEl.style.display='none';
+  if(authMode==='register'){
+    const ans=parseInt($('auth-captcha').value.trim(),10);
+    if(isNaN(ans)||ans!==captchaAnswer){
+      errEl.textContent='Неверный ответ на капчу';errEl.style.display='block';
+      errEl.style.animation='none';requestAnimationFrame(()=>{errEl.style.animation='shake .3s ease';});
+      genCaptcha();return;
+    }
+  }
   const btn=$('auth-btn-text');const prevText=btn.textContent;
   btn.textContent=authMode==='login'?'⏳ Входим...':'⏳ Регистрируем...';
   let res,data;
   try{
-    const body=authMode==='login'?{username,password}:{username,password,email};
     res=await fetch(authMode==='login'?'/api/auth/login':'/api/auth/register',{
-      method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+      method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username,password})});
     data=await res.json();
   }catch{
     errEl.textContent='Ошибка сети';errEl.style.display='block';btn.textContent=prevText;return;
@@ -653,30 +650,10 @@ async function submitAuth(){
   if(!res.ok){
     errEl.textContent=data.error||'Ошибка';errEl.style.display='block';
     errEl.style.animation='none';requestAnimationFrame(()=>{errEl.style.animation='shake .3s ease';});
-    return;
-  }
-  if(data.needs_verify){
-    pending2faUid=data.uid;
-    $('tfa-hint').textContent=`Отправили код на ${email}`;
-    $('tfa-code').value='';$('tfa-err').style.display='none';
-    showPage('p-2fa');setTimeout(()=>$('tfa-code').focus(),200);
+    if(authMode==='register') genCaptcha();
     return;
   }
   applyUserData(data);toast(`Привет, ${currentUser}!`,'👋');await initApp();
-}
-async function submit2fa(){
-  const code=$('tfa-code').value.trim();
-  const errEl=$('tfa-err');errEl.style.display='none';
-  if(code.length!==6){errEl.textContent='Введи 6 цифр';errEl.style.display='block';return;}
-  const res=await fetch('/api/auth/verify-email',{method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({uid:pending2faUid,code})});
-  const data=await res.json();
-  if(!res.ok){
-    errEl.textContent=data.error||'Ошибка';errEl.style.display='block';
-    errEl.style.animation='none';requestAnimationFrame(()=>{errEl.style.animation='shake .3s ease';});
-    return;
-  }
-  pending2faUid=null;applyUserData(data);toast(`Добро пожаловать, ${currentUser}!`,'🎉');await initApp();
 }
 function applyUserData(data){
   currentUser=data.username;currentDisplayName=data.display_name||'';
