@@ -316,17 +316,19 @@
         <input type="text" id="auth-username" placeholder="Введи имя" autocomplete="username"/></div>
       <div class="auth-field"><div class="input-label">Пароль</div>
         <input type="password" id="auth-password" placeholder="Введи пароль" autocomplete="current-password" onkeydown="if(event.key==='Enter')submitAuth()"/></div>
+      <div class="auth-field" id="auth-email-field" style="display:none"><div class="input-label">Email для подтверждения</div>
+        <input type="text" id="auth-email" placeholder="example@mail.ru" autocomplete="email" onkeydown="if(event.key==='Enter')submitAuth()"/></div>
       <button class="btn btn-primary btn-full" onclick="submitAuth()" style="margin-top:8px"><span id="auth-btn-text">Войти</span></button>
     </div>
   </div>
 </div>
 
-<!-- 2FA -->
+<!-- Email verify -->
 <div id="p-2fa" class="page">
   <div class="auth-wrap">
     <div class="auth-card">
       <div class="auth-logo" style="font-size:32px">✉️</div>
-      <div class="auth-sub" style="margin-bottom:4px;font-size:15px;font-weight:600;color:var(--text)">Проверь почту</div>
+      <div class="auth-sub" style="margin-bottom:4px;font-size:15px;font-weight:600;color:var(--text)">Подтверди email</div>
       <div id="tfa-hint" class="auth-sub" style="margin-bottom:20px"></div>
       <div id="tfa-err" class="auth-err" style="display:none"></div>
       <div class="auth-field"><div class="input-label">Код из письма</div>
@@ -629,17 +631,20 @@ function switchAuthTab(mode){
   $('tab-register').classList.toggle('active',mode==='register');
   $('auth-btn-text').textContent=mode==='login'?'Войти':'Зарегистрироваться';
   $('auth-err').style.display='none';
+  $('auth-email-field').style.display=mode==='register'?'block':'none';
 }
 async function submitAuth(){
   const username=$('auth-username').value.trim();
   const password=$('auth-password').value.trim();
+  const email=authMode==='register'?$('auth-email').value.trim():'';
   const errEl=$('auth-err');errEl.style.display='none';
   const btn=$('auth-btn-text');const prevText=btn.textContent;
-  btn.textContent='⏳ Входим...';
+  btn.textContent=authMode==='login'?'⏳ Входим...':'⏳ Регистрируем...';
   let res,data;
   try{
+    const body=authMode==='login'?{username,password}:{username,password,email};
     res=await fetch(authMode==='login'?'/api/auth/login':'/api/auth/register',{
-      method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username,password})});
+      method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
     data=await res.json();
   }catch{
     errEl.textContent='Ошибка сети';errEl.style.display='block';btn.textContent=prevText;return;
@@ -650,9 +655,9 @@ async function submitAuth(){
     errEl.style.animation='none';requestAnimationFrame(()=>{errEl.style.animation='shake .3s ease';});
     return;
   }
-  if(data.needs_2fa){
+  if(data.needs_verify){
     pending2faUid=data.uid;
-    $('tfa-hint').textContent='Отправили код на почту, привязанную к аккаунту';
+    $('tfa-hint').textContent=`Отправили код на ${email}`;
     $('tfa-code').value='';$('tfa-err').style.display='none';
     showPage('p-2fa');setTimeout(()=>$('tfa-code').focus(),200);
     return;
@@ -663,7 +668,7 @@ async function submit2fa(){
   const code=$('tfa-code').value.trim();
   const errEl=$('tfa-err');errEl.style.display='none';
   if(code.length!==6){errEl.textContent='Введи 6 цифр';errEl.style.display='block';return;}
-  const res=await fetch('/api/auth/verify-2fa',{method:'POST',headers:{'Content-Type':'application/json'},
+  const res=await fetch('/api/auth/verify-email',{method:'POST',headers:{'Content-Type':'application/json'},
     body:JSON.stringify({uid:pending2faUid,code})});
   const data=await res.json();
   if(!res.ok){
@@ -671,7 +676,7 @@ async function submit2fa(){
     errEl.style.animation='none';requestAnimationFrame(()=>{errEl.style.animation='shake .3s ease';});
     return;
   }
-  pending2faUid=null;applyUserData(data);toast(`Привет, ${currentUser}!`,'👋');await initApp();
+  pending2faUid=null;applyUserData(data);toast(`Добро пожаловать, ${currentUser}!`,'🎉');await initApp();
 }
 function applyUserData(data){
   currentUser=data.username;currentDisplayName=data.display_name||'';

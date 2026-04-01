@@ -10,39 +10,30 @@ load_dotenv()
 
 app = Flask(__name__, static_folder="static")
 
-def send_2fa_email(to_email, code):
+def send_verification_email(to_email, code):
     smtp_user = os.getenv("GMAIL_USER")
     smtp_pass = os.getenv("GMAIL_APP_PASSWORD")
-    smtp_host = os.getenv("SMTP_HOST", "smtp.yandex.ru")
+    smtp_host = os.getenv("SMTP_HOST", "smtp.gmail.com")
     smtp_port = int(os.getenv("SMTP_PORT", "465"))
     msg = MIMEText(
-        f"Ваш код подтверждения для входа в Подели:\n\n"
+        f"Твой код подтверждения для регистрации в Подели:\n\n"
         f"  {code}\n\n"
         f"Код действителен 5 минут.\n"
         f"Если это были не вы — просто проигнорируйте письмо."
     )
-    msg["Subject"] = f"Код входа: {code} — Подели"
+    msg["Subject"] = f"Код подтверждения: {code} — Подели"
     msg["From"] = smtp_user
     msg["To"] = to_email
     with smtplib.SMTP_SSL(smtp_host, smtp_port, timeout=10) as s:
         s.login(smtp_user, smtp_pass)
         s.sendmail(smtp_user, [to_email], msg.as_string())
 
-@app.route("/api/test-email")
-def test_email():
-    to = request.args.get("to","")
-    if not to: return jsonify({"error":"?to=email не указан"}), 400
-    try:
-        send_2fa_email(to, "123456")
-        return jsonify({"ok": True, "sent_to": to})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
 def run_migrations():
     with get_conn() as conn:
         with conn.cursor() as cur:
             cur.execute("ALTER TABLE orders ADD COLUMN IF NOT EXISTS items JSONB")
             cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar TEXT")
+            cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified BOOLEAN DEFAULT FALSE")
         conn.commit()
 
 run_migrations()
@@ -91,20 +82,35 @@ def register():
     d = request.json
     username = d.get("username","").strip()
     password = d.get("password","").strip()
+    email = d.get("email","").strip().lower()
     if not username or not password: return jsonify({"error":"Введи имя и пароль"}), 400
     if len(username) < 2: return jsonify({"error":"Имя слишком короткое"}), 400
     if len(password) < 4: return jsonify({"error":"Пароль минимум 4 символа"}), 400
+    if not email: return jsonify({"error":"Введи email для подтверждения"}), 400
     try:
+        code = str(random.randint(100000, 999999))
+        expires = datetime.now() + timedelta(minutes=5)
         with get_conn() as conn:
             with conn.cursor() as cur:
-                cur.execute("INSERT INTO users (username,password_hash) VALUES (%s,%s) RETURNING id,username,is_admin",
-                            (username, generate_password_hash(password)))
+                cur.execute("""INSERT INTO users (username,password_hash,email,verify_code,verify_code_expires)
+                               VALUES (%s,%s,%s,%s,%s) RETURNING id,username,is_admin""",
+                            (username, generate_password_hash(password), email, code, expires))
                 u = cur.fetchone()
             conn.commit()
-        session.update({'user_id':str(u['id']),'username':u['username'],'display_name':'',
-                        'phone':'','bank':'','is_admin':bool(u['is_admin']),'login_time':time.time()})
-        return jsonify({"ok":True,"username":u['username'],"display_name":'','phone':'','bank':'','is_admin':False}), 201
-    except: return jsonify({"error":"Имя уже занято"}), 409
+        try:
+            send_verification_email(email, code)
+        except Exception as e:
+            # roll back user if email fails
+            with get_conn() as conn:
+                with conn.cursor() as cur:
+                    cur.execute("DELETE FROM users WHERE id=%s", (str(u['id']),))
+                conn.commit()
+            return jsonify({"error": f"Не удалось отправить письмо: {e}"}), 500
+        return jsonify({"needs_verify": True, "uid": str(u['id'])}), 201
+    except Exception as ex:
+        if 'unique' in str(ex).lower():
+            return jsonify({"error":"Имя уже занято"}), 409
+        return jsonify({"error":"Ошибка регистрации"}), 500
 
 @app.route("/api/auth/login", methods=["POST"])
 def login():
@@ -123,19 +129,6 @@ def login():
     if not u or not check_password_hash(u['password_hash'], password):
         return jsonify({"error":"Неверное имя или пароль"}), 401
     if u['is_banned']: return jsonify({"error":"Аккаунт заблокирован"}), 403
-    if u['email']:
-        code = str(random.randint(100000, 999999))
-        expires = datetime.now() + timedelta(minutes=5)
-        with get_conn() as conn:
-            with conn.cursor() as cur:
-                cur.execute("UPDATE users SET verify_code=%s, verify_code_expires=%s WHERE id=%s",
-                            (code, expires, str(u['id'])))
-            conn.commit()
-        try:
-            send_2fa_email(u['email'], code)
-        except Exception as e:
-            return jsonify({"error": f"Не удалось отправить письмо: {e}"}), 500
-        return jsonify({"needs_2fa": True, "uid": str(u['id'])})
     session.update({'user_id':str(u['id']),'username':u['username'],'display_name':u['display_name'],
                     'phone':u['phone'],'bank':u['bank'],'avatar':u['avatar'],
                     'is_admin':bool(u['is_admin']),'login_time':time.time()})
@@ -145,8 +138,8 @@ def login():
 @app.route("/api/auth/logout", methods=["POST"])
 def logout(): session.clear(); return jsonify({"ok":True})
 
-@app.route("/api/auth/verify-2fa", methods=["POST"])
-def verify_2fa():
+@app.route("/api/auth/verify-email", methods=["POST"])
+def verify_email():
     d = request.json
     uid = d.get("uid","").strip()
     code = d.get("code","").strip()
@@ -155,7 +148,7 @@ def verify_2fa():
         with conn.cursor() as cur:
             cur.execute("""SELECT id,username,COALESCE(display_name,'') as display_name,
                           COALESCE(phone,'') as phone,COALESCE(bank,'') as bank,
-                          COALESCE(avatar,'') as avatar,is_admin,
+                          COALESCE(avatar,'') as avatar,COALESCE(email,'') as email,is_admin,
                           verify_code,verify_code_expires
                           FROM users WHERE id=%s""", (uid,))
             u = cur.fetchone()
@@ -163,13 +156,13 @@ def verify_2fa():
     if not u['verify_code'] or u['verify_code'] != code:
         return jsonify({"error":"Неверный код"}), 401
     if not u['verify_code_expires'] or datetime.now() > u['verify_code_expires']:
-        return jsonify({"error":"Код истёк, войди снова"}), 401
+        return jsonify({"error":"Код истёк, зарегистрируйся снова"}), 401
     with get_conn() as conn:
         with conn.cursor() as cur:
-            cur.execute("UPDATE users SET verify_code='', verify_code_expires=NULL WHERE id=%s", (uid,))
+            cur.execute("UPDATE users SET verify_code=NULL, verify_code_expires=NULL, email_verified=TRUE WHERE id=%s", (uid,))
         conn.commit()
     session.update({'user_id':str(u['id']),'username':u['username'],'display_name':u['display_name'],
-                    'phone':u['phone'],'bank':u['bank'],'avatar':u['avatar'],
+                    'phone':u['phone'],'bank':u['bank'],'avatar':u['avatar'],'email':u['email'],
                     'is_admin':bool(u['is_admin']),'login_time':time.time()})
     return jsonify({"ok":True,"username":u['username'],"display_name":u['display_name'],
                     "phone":u['phone'],"bank":u['bank'],"avatar":u['avatar'],"is_admin":bool(u['is_admin'])})
