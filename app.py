@@ -2,11 +2,19 @@ from flask import Flask, request, jsonify, send_from_directory, session
 from dotenv import load_dotenv
 from db import get_conn
 from werkzeug.security import generate_password_hash, check_password_hash
-import os, uuid, time
+import os, uuid, time, json as _json
 
 load_dotenv()
 
 app = Flask(__name__, static_folder="static")
+
+def run_migrations():
+    with get_conn() as conn:
+        with conn.cursor() as cur:
+            cur.execute("""ALTER TABLE orders ADD COLUMN IF NOT EXISTS items JSONB""")
+        conn.commit()
+
+run_migrations()
 app.secret_key = os.getenv("SECRET_KEY", "super-secret-dev-key-change-me")
 app.config['MAX_CONTENT_LENGTH'] = 8 * 1024 * 1024
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
@@ -249,7 +257,7 @@ def get_session(sid):
             cur.execute("SELECT id,name,created_at FROM sessions WHERE id=%s",(str(sid),))
             sr = cur.fetchone()
             if not sr: return jsonify({"error":"Сессия не найдена"}), 404
-            cur.execute("""SELECT o.id,o.name,o.created_at,COALESCE(o.image_path,'') as image_path,
+            cur.execute("""SELECT o.id,o.name,o.created_at,COALESCE(o.image_path,'') as image_path,o.items,
                           COALESCE(SUM(p.amount) FILTER (WHERE p.is_payer=TRUE),0) AS total
                           FROM orders o LEFT JOIN participants p ON p.order_id=o.id
                           WHERE o.session_id=%s GROUP BY o.id ORDER BY o.created_at""",(str(sid),))
@@ -295,10 +303,12 @@ def create_order(sid):
     name = d.get("name","").strip()
     parts = d.get("participants",[])
     img = d.get("image_path","").strip()
+    items = d.get("items", None)
     if not name or not parts: return jsonify({"error":"Заполни все поля"}), 400
     with get_conn() as conn:
         with conn.cursor() as cur:
-            cur.execute("INSERT INTO orders (session_id,name,image_path) VALUES (%s,%s,%s) RETURNING id",(str(sid),name,img))
+            cur.execute("INSERT INTO orders (session_id,name,image_path,items) VALUES (%s,%s,%s,%s) RETURNING id",
+                        (str(sid),name,img,_json.dumps(items) if items is not None else None))
             oid = cur.fetchone()["id"]
             for i,p in enumerate(parts):
                 pn=p.get("name","").strip(); pa=float(p.get("amount",0))
@@ -317,10 +327,12 @@ def update_order(oid):
     if k: return k
     d = request.json
     name=d.get("name","").strip(); parts=d.get("participants",[]); img=d.get("image_path","").strip()
+    items=d.get("items", None)
     if not name or not parts: return jsonify({"error":"Заполни все поля"}), 400
     with get_conn() as conn:
         with conn.cursor() as cur:
-            cur.execute("UPDATE orders SET name=%s,image_path=%s WHERE id=%s",(name,img,str(oid)))
+            cur.execute("UPDATE orders SET name=%s,image_path=%s,items=%s WHERE id=%s",
+                        (name,img,_json.dumps(items) if items is not None else None,str(oid)))
             cur.execute("DELETE FROM participants WHERE order_id=%s",(str(oid),))
             for i,p in enumerate(parts):
                 cur.execute("INSERT INTO participants (order_id,name,amount,is_payer,phone,bank) VALUES (%s,%s,%s,%s,%s,%s)",
