@@ -14,7 +14,7 @@ def send_verification_email(to_email, code):
     smtp_user = os.getenv("GMAIL_USER")
     smtp_pass = os.getenv("GMAIL_APP_PASSWORD")
     smtp_host = os.getenv("SMTP_HOST", "smtp.gmail.com")
-    smtp_port = int(os.getenv("SMTP_PORT", "465"))
+    smtp_port = int(os.getenv("SMTP_PORT", "587"))
     msg = MIMEText(
         f"Твой код подтверждения для регистрации в Подели:\n\n"
         f"  {code}\n\n"
@@ -24,7 +24,9 @@ def send_verification_email(to_email, code):
     msg["Subject"] = f"Код подтверждения: {code} — Подели"
     msg["From"] = smtp_user
     msg["To"] = to_email
-    with smtplib.SMTP_SSL(smtp_host, smtp_port, timeout=10) as s:
+    with smtplib.SMTP(smtp_host, smtp_port, timeout=10) as s:
+        s.ehlo()
+        s.starttls()
         s.login(smtp_user, smtp_pass)
         s.sendmail(smtp_user, [to_email], msg.as_string())
 
