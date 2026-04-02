@@ -471,12 +471,15 @@
       <div id="img-uploading" class="img-uploading" style="display:none">⏳ Загружаем...</div>
     </div>
 
-    <div class="sec">Позиции <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:12px;color:var(--muted)">— название и сумма каждой</span></div>
+    <div class="sec">Позиции <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:12px;color:var(--muted)">— название, сумма и калории</span></div>
     <div class="card" style="padding:16px 18px">
       <div id="items-list"></div>
       <div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px;flex-wrap:wrap;gap:8px">
         <button class="btn btn-sm" onclick="addItemRow()">+ Позиция</button>
-        <div class="total-badge">Итого: <span id="items-total">0,00 ₽</span></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+          <div class="total-badge" style="background:rgba(255,160,0,.13);color:#ffa000">Калории: <span id="items-kcal">0</span> ккал</div>
+          <div class="total-badge">Итого: <span id="items-total">0,00 ₽</span></div>
+        </div>
       </div>
     </div>
 
@@ -1007,18 +1010,25 @@ function resetImageZone(){$('img-upload-zone').style.display='block';$('img-uplo
 // ── Items ─────────────────────────────────────────────────────────────────────
 function recalcPayerAmount(){
   const rows=$('items-list').querySelectorAll('.item-row');
-  let total=0;rows.forEach(r=>{total+=parseFloat(r.querySelector('[data-item="amount"]').value)||0;});
+  let total=0,kcal=0;
+  rows.forEach(r=>{
+    total+=parseFloat(r.querySelector('[data-item="amount"]').value)||0;
+    kcal+=parseFloat(r.querySelector('[data-item="calories"]').value)||0;
+  });
   const payerInput=$('participants-list').querySelector('.participant-block:first-child [data-field="amount"]');
   if(payerInput)payerInput.value=total>0?total.toFixed(2):'';
   $('items-total').textContent=fmt(total);
+  $('items-kcal').textContent=Math.round(kcal);
 }
-function addItemRow(name='',amount=''){
+function addItemRow(name='',amount='',calories=''){
   const list=$('items-list');
   const row=document.createElement('div');row.className='item-row';
   row.innerHTML=`
     <input type="text" placeholder="Название позиции" value="${esc(String(name))}" style="flex:2" data-item="name"/>
     <input type="number" placeholder="Сумма" value="${amount||''}" min="0" step="0.01" style="flex:1;min-width:90px" data-item="amount" oninput="recalcPayerAmount()"/>
     <span class="lbl">₽</span>
+    <input type="number" placeholder="ккал" value="${calories||''}" min="0" step="1" style="flex:0 0 70px;min-width:60px" data-item="calories" oninput="recalcPayerAmount()"/>
+    <span class="lbl" style="font-size:11px">ккал</span>
     <button class="btn btn-icon" onclick="removeItemRow(this)">×</button>`;
   list.appendChild(row);recalcPayerAmount();
 }
@@ -1046,7 +1056,7 @@ function goEditOrder(orderId){
   if(currentImagePath)showImagePreview(currentImagePath);else removeImage();
   // Позиции: если есть items — используем, иначе одна позиция из name
   const items=order.items||[{name:order.name,amount:''}];
-  items.forEach(it=>addItemRow(it.name,it.amount||''));
+  items.forEach(it=>addItemRow(it.name,it.amount||'',it.calories||''));
   participantCount=0;order.participants.forEach(p=>addParticipantRow(p.name,p.amount,p.phone||'',p.bank||''));
   showPage('p-order');
 }
@@ -1119,9 +1129,10 @@ async function saveOrder(){
   for(let r of itemRows){
     const n=r.querySelector('[data-item="name"]').value.trim();
     const a=parseFloat(r.querySelector('[data-item="amount"]').value)||0;
+    const c=parseFloat(r.querySelector('[data-item="calories"]').value)||0;
     if(!n){err.textContent='Укажи название каждой позиции';err.style.display='block';return;}
     if(a<=0){err.textContent='Укажи сумму каждой позиции';err.style.display='block';return;}
-    items.push({name:n,amount:a});
+    items.push({name:n,amount:a,calories:c||undefined});
   }
   if(!items.length){err.textContent='Добавь хотя бы одну позицию';err.style.display='block';return;}
   const name=items.map(i=>i.name).join(', ');
@@ -1162,7 +1173,7 @@ async function repeatOrder(orderId){
   $('items-list').innerHTML='';$('participants-list').innerHTML='';$('order-err').style.display='none';
   if(currentImagePath)showImagePreview(currentImagePath);else removeImage();
   const items=order.items||[{name:order.name,amount:''}];
-  items.forEach(it=>addItemRow(it.name,it.amount||''));
+  items.forEach(it=>addItemRow(it.name,it.amount||'',it.calories||''));
   participantCount=0;order.participants.forEach(p=>addParticipantRow(p.name,p.amount,p.phone||'',p.bank||''));
   showPage('p-order');toast('Заказ скопирован — проверь данные','📋');
 }
